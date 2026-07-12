@@ -1,3 +1,7 @@
-export default function AuditChecklist() {
-  return <section />;
+import React from 'react';
+
+const options = [{ value: 'VERIFIED', label: 'Verified', active: 'bg-success text-white' }, { value: 'MISSING', label: 'Missing', active: 'bg-alert text-white shadow-sm' }, { value: 'DAMAGED', label: 'Damaged', active: 'bg-warning text-white' }];
+
+export default function AuditChecklist({ items, disabled, updatingItemId, onVerify }) {
+  return <section className="overflow-hidden rounded border border-gray-100 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Asset Tag</th><th className="px-4 py-3">Name</th><th className="px-4 py-3">Expected Location</th><th className="px-4 py-3">Verification Status</th></tr></thead><tbody className="divide-y divide-gray-100">{items.map((item) => <tr key={item.id}><td className="px-4 py-4 font-semibold text-brand-900">{item.asset?.tag || 'Unknown'}</td><td className="px-4 py-4 text-slate-700">{item.asset?.name || 'Unknown asset'}</td><td className="px-4 py-4 text-slate-600">{item.expectedLocation || item.asset?.location || 'Not specified'}</td><td className="px-4 py-4"><div className="flex flex-wrap gap-2">{options.map((option) => <button key={option.value} type="button" disabled={disabled || updatingItemId === item.id} onClick={() => onVerify(item.id, option.value)} className={`rounded px-2.5 py-1.5 text-xs font-medium disabled:opacity-60 ${item.verification === option.value ? option.active : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{option.label}</button>)}</div></td></tr>)}{items.length === 0 && <tr><td colSpan="4" className="px-4 py-8 text-center text-sm text-slate-500">No assets are assigned to this audit cycle.</td></tr>}</tbody></table></div></section>;
 }

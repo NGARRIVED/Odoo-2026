@@ -1,3 +1,2 @@
-export default function Maintenance() {
-  return <section />;
-}
+export { default } from './index';
+export { Maintenance } from './index';

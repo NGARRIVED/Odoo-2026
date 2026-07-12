@@ -41,34 +41,42 @@ async function seed() {
     const employees = {
       admin: await tx.employee.create({
         data: {
-          name: 'Amina Yusuf',
-          email: 'admin@assetflow.local',
+          name: 'Yash Yadav',
+          email: 'yash.yadav@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'ADMIN'
         }
       }),
       jane: await tx.employee.create({
         data: {
-          name: 'Jane Doe',
-          email: 'jane.doe@assetflow.local',
+          name: 'Vaishnavi Sabale',
+          email: 'vaishnavi.sabale@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'EMPLOYEE'
         }
       }),
       moses: await tx.employee.create({
         data: {
-          name: 'Moses Okafor',
-          email: 'moses.okafor@assetflow.local',
+          name: 'Pragati Sanap',
+          email: 'pragati.sanap@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'ASSET_MANAGER'
         }
       }),
       lina: await tx.employee.create({
         data: {
-          name: 'Lina Patel',
-          email: 'lina.patel@assetflow.local',
+          name: 'Akshada Bhor',
+          email: 'akshada.bhor@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'EMPLOYEE'
+        }
+      }),
+      rudrek: await tx.employee.create({
+        data: {
+          name: 'Rudrek Rokade',
+          email: 'rudrek.rokade@assetflow.local',
+          passwordHash: demoPasswordHash,
+          role: 'DEPARTMENT_HEAD'
         }
       })
     };
