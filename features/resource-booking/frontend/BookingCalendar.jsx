@@ -1,4 +1,6 @@
 import React from 'react';
+import { getTokenPayload, isManagerOrAbove } from '../../../shared/utils/auth';
+import { Trash2 } from 'lucide-react';
 
 const START_HOUR = 8;
 const END_HOUR = 18;
@@ -17,7 +19,10 @@ function minutesFromStart(value) {
   return ((date.getHours() - START_HOUR) * 60) + date.getMinutes();
 }
 
-export default function BookingCalendar({ selectedResource, selectedDate, schedule, isLoading }) {
+export default function BookingCalendar({ selectedResource, selectedDate, schedule, isLoading, onCancelBooking }) {
+  const currentUserId = getTokenPayload()?.employeeId;
+  const isManager = isManagerOrAbove();
+
   if (!selectedResource) {
     return (
       <section className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
@@ -68,10 +73,23 @@ export default function BookingCalendar({ selectedResource, selectedDate, schedu
 
                 if (bottom <= 0 || top >= totalMinutes) return null;
 
+                const canCancel = booking.bookedById === currentUserId || isManager;
+
                 return (
-                  <article key={booking.id} className="absolute left-3 right-3 overflow-hidden rounded-md border-l-4 border-brand-500 bg-brand-100 p-3 text-sm shadow-sm" style={{ top: `${(top / totalMinutes) * 100}%`, height: `${Math.max(8, ((bottom - Math.max(0, top)) / totalMinutes) * 100)}%` }}>
-                    <p className="font-semibold text-slate-900">{booking.purpose || 'Reserved resource'}</p>
-                    <p className="mt-1 text-xs text-slate-600">{formatTime(booking.startTime)} – {formatTime(booking.endTime)}</p>
+                  <article key={booking.id} className="absolute left-3 right-3 overflow-hidden rounded-md border-l-4 border-brand-500 bg-brand-100 p-3 text-sm shadow-sm flex justify-between items-start group" style={{ top: `${(top / totalMinutes) * 100}%`, height: `${Math.max(8, ((bottom - Math.max(0, top)) / totalMinutes) * 100)}%` }}>
+                    <div>
+                      <p className="font-semibold text-slate-900">{booking.purpose || 'Reserved resource'}</p>
+                      <p className="mt-1 text-xs text-slate-600">{formatTime(booking.startTime)} – {formatTime(booking.endTime)}</p>
+                    </div>
+                    {canCancel && onCancelBooking && (
+                      <button 
+                        onClick={() => onCancelBooking(booking.id)}
+                        className="text-red-500 hover:bg-red-50 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Cancel Booking"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </article>
                 );
               })}

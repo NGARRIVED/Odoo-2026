@@ -6,10 +6,7 @@ const {
   getBooking,
   getAssetSchedule,
   createBooking,
-<<<<<<< Updated upstream
   updateBooking,
-=======
->>>>>>> Stashed changes
   cancelBooking
 } = require('./booking.controller');
 
@@ -21,11 +18,7 @@ router.get('/resources', getBookableResources);
 router.get('/resources/:assetId/schedule', getAssetSchedule);
 router.get('/:bookingId', getBooking);
 router.post('/', createBooking);
-<<<<<<< Updated upstream
 router.patch('/:bookingId', updateBooking);
 router.patch('/:bookingId/cancel', cancelBooking);
-=======
-router.delete('/:id', cancelBooking);
->>>>>>> Stashed changes
 
 module.exports = router;

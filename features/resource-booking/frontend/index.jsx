@@ -196,7 +196,7 @@ export function ResourceBooking() {
       {success && <div className="rounded-md bg-success p-4 text-sm text-white shadow-sm" role="status">{success}</div>}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-        <BookingCalendar selectedResource={selectedResource} selectedDate={form.date} schedule={schedule} isLoading={isLoadingSchedule} />
+        <BookingCalendar selectedResource={selectedResource} selectedDate={form.date} schedule={schedule} isLoading={isLoadingSchedule} onCancelBooking={cancelBooking} />
         <div className="space-y-4">
           <ResourceBookingForm form={form} resources={visibleResources} categories={categories} isLoadingResources={isLoadingResources} isSubmitting={isSubmitting} onChange={updateForm} onSubmit={submitBooking} />
           <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
