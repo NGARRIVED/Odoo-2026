@@ -11,6 +11,7 @@ import { Maintenance } from '../../features/maintenance/frontend';
 import { Audit } from '../../features/audit/frontend';
 import { ReportsAnalytics } from '../../features/reports-analytics/frontend';
 import { Notifications } from '../../features/notifications/frontend';
+import { Layout } from '../../shared/ui-components';
 
 function ProtectedRoute({ children }) {
   return children;
@@ -24,78 +25,20 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route
-          path="/dashboard"
-          element={(
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/organization"
-          element={(
-            <ProtectedRoute>
-              <OrganizationSetup />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/assets"
-          element={(
-            <ProtectedRoute>
-              <Assets />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/allocations"
-          element={(
-            <ProtectedRoute>
-              <AllocationTransfer />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/bookings"
-          element={(
-            <ProtectedRoute>
-              <ResourceBooking />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/maintenance"
-          element={(
-            <ProtectedRoute>
-              <Maintenance />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/audits"
-          element={(
-            <ProtectedRoute>
-              <Audit />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/reports"
-          element={(
-            <ProtectedRoute>
-              <ReportsAnalytics />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/notifications"
-          element={(
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          )}
-        />
+        
+        {/* Protected Layout wrapper */}
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/organization" element={<ProtectedRoute><OrganizationSetup /></ProtectedRoute>} />
+          <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
+          <Route path="/allocations" element={<ProtectedRoute><AllocationTransfer /></ProtectedRoute>} />
+          <Route path="/bookings" element={<ProtectedRoute><ResourceBooking /></ProtectedRoute>} />
+          <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
+          <Route path="/audits" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsAnalytics /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

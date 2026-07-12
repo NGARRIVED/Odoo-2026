@@ -8,3 +8,5 @@ export * from "./Select";
 export * from "./Tabs";
 export * from "./Modal";
 export * from "./Layout";
+export * from "./Sidebar";
+export * from "./Navbar";
