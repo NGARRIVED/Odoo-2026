@@ -20,69 +20,51 @@ function addDays(date, days) {
 	return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
-function formatCurrency(value) {
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency: 'USD'
-	}).format(Number(value || 0));
-}
-
-function bucketDates(startDate, endDate, bucketCount) {
-	const buckets = [];
-	const totalMs = endDate.getTime() - startDate.getTime();
-	const bucketMs = totalMs / bucketCount;
-
-	for (let index = 0; index < bucketCount; index += 1) {
-		const bucketStart = new Date(startDate.getTime() + bucketMs * index);
-		const bucketEnd = index === bucketCount - 1 ? endDate : new Date(startDate.getTime() + bucketMs * (index + 1));
-		buckets.push({ bucketStart, bucketEnd, value: 0 });
+function buildDepartmentScope(department) {
+	if (department === 'all') {
+		return {};
 	}
 
-	return buckets;
-}
-
-function assignToBuckets(records, bucketCount, startDate, endDate) {
-	const buckets = bucketDates(startDate, endDate, bucketCount);
-	const totalMs = endDate.getTime() - startDate.getTime();
-	const bucketSize = totalMs / bucketCount || 1;
-
-	records.forEach((record) => {
-		const value = record instanceof Date ? record : new Date(record);
-		if (Number.isNaN(value.getTime()) || value < startDate || value > endDate) {
-			return;
-		}
-
-		const index = Math.min(bucketCount - 1, Math.max(0, Math.floor((value.getTime() - startDate.getTime()) / bucketSize)));
-		buckets[index].value += 1;
-	});
-
-	return buckets;
+	return {
+		OR: [
+			{ departmentId: department },
+			{ asset: { departmentId: department } }
+		]
+	};
 }
 
 function bucketLabels(startDate, endDate, bucketCount) {
-	const buckets = bucketDates(startDate, endDate, bucketCount);
+	const totalMs = Math.max(1, endDate.getTime() - startDate.getTime());
+	const bucketMs = totalMs / bucketCount;
 
-	return buckets.map((bucket) => {
-		const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(bucket.bucketStart);
-		const day = bucket.bucketStart.getDate();
-		return `${month} ${day}`;
+	return Array.from({ length: bucketCount }, (_, index) => {
+		const bucketStart = new Date(startDate.getTime() + bucketMs * index);
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric'
+		}).format(bucketStart);
 	});
 }
 
-function buildUtilizationBreakdown(categories) {
+function bucketSeries(dates, startDate, endDate, bucketCount) {
+	const totalMs = Math.max(1, endDate.getTime() - startDate.getTime());
+	const bucketMs = totalMs / bucketCount;
+	const values = Array.from({ length: bucketCount }, () => 0);
 
-	function buildDepartmentScope(department) {
-		if (department === 'all') {
-			return {};
+	dates.forEach((value) => {
+		const current = new Date(value);
+		if (Number.isNaN(current.getTime()) || current < startDate || current > endDate) {
+			return;
 		}
 
-		return {
-			OR: [
-				{ departmentId: department },
-				{ asset: { departmentId: department } }
-			]
-		};
-	}
+		const bucketIndex = Math.min(bucketCount - 1, Math.max(0, Math.floor((current.getTime() - startDate.getTime()) / bucketMs)));
+		values[bucketIndex] += 1;
+	});
+
+	return values;
+}
+
+function buildUtilizationBreakdown(categories) {
 	return categories
 		.map((category) => {
 			const activeAllocations = category.assets.reduce((count, asset) => count + asset.allocations.length, 0);
@@ -106,30 +88,30 @@ async function getSummary(req, res) {
 		const periodConfig = getPeriodConfig(period);
 		const endDate = startOfDay(new Date());
 		const startDate = addDays(endDate, -periodConfig.days);
-		const departmentFilter = department !== 'all' ? { departmentId: department } : {};
-	const assetDepartmentFilter = department !== 'all' ? { departmentId: department } : {};
-	const scopedFilter = buildDepartmentScope(department);
+		const assetScope = department === 'all' ? {} : { departmentId: department };
+		const relationScope = buildDepartmentScope(department);
 
-		const [departments, totalAssets, availableAssets, allocatedAssets, maintenanceAssets, activeBookings, pendingTransfers, criticalAlerts, maintenanceRequests, allocations, categories, oldestAssets] = await Promise.all([
+		const [departments, totalAssets, availableAssets, allocatedAssets, maintenanceAssets, activeBookings, pendingTransfers, criticalNotifications, criticalMaintenanceCount, maintenanceRequests, allocations, categories, oldestAssets] = await Promise.all([
 			prisma.department.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
-			prisma.asset.count({ where: departmentFilter }),
-			prisma.asset.count({ where: { ...departmentFilter, status: 'AVAILABLE' } }),
-			prisma.allocation.count({ where: { ...departmentFilter, status: 'ACTIVE' } }),
-			prisma.maintenanceRequest.count({ where: { ...departmentFilter, status: { in: ['PENDING', 'APPROVED', 'TECHNICIAN_ASSIGNED', 'IN_PROGRESS'] } } }),
-			prisma.booking.count({ where: { ...departmentFilter, status: { in: ['UPCOMING', 'ONGOING'] } } }),
+			prisma.asset.count({ where: assetScope }),
+			prisma.asset.count({ where: { ...assetScope, status: 'AVAILABLE' } }),
+			prisma.allocation.count({ where: { ...relationScope, status: 'ACTIVE' } }),
+			prisma.maintenanceRequest.count({ where: { ...relationScope, status: { in: ['PENDING', 'APPROVED', 'TECHNICIAN_ASSIGNED', 'IN_PROGRESS'] } } }),
+			prisma.booking.count({ where: { ...relationScope, status: { in: ['UPCOMING', 'ONGOING'] } } }),
 			prisma.transferRequest.count({ where: { status: 'REQUESTED' } }),
 			prisma.notification.count({ where: { type: { in: ['OVERDUE_RETURN', 'AUDIT_DISCREPANCY'] } } }),
+			prisma.maintenanceRequest.count({ where: { ...relationScope, priority: 'CRITICAL', status: { not: 'RESOLVED' } } }),
 			prisma.maintenanceRequest.findMany({
 				where: {
 					createdAt: { gte: startDate },
-					...departmentFilter
+					...relationScope
 				},
 				select: { createdAt: true }
 			}),
 			prisma.allocation.findMany({
 				where: {
 					allocatedDate: { gte: startDate },
-					...departmentFilter
+					...relationScope
 				},
 				select: { allocatedDate: true }
 			}),
@@ -137,7 +119,7 @@ async function getSummary(req, res) {
 				orderBy: { name: 'asc' },
 				include: {
 					assets: {
-						where: departmentFilter,
+						where: assetScope,
 						include: {
 							allocations: {
 								where: { status: 'ACTIVE' },
@@ -149,7 +131,7 @@ async function getSummary(req, res) {
 				}
 			}),
 			prisma.asset.findMany({
-				where: departmentFilter,
+				where: assetScope,
 				orderBy: [
 					{ acquisitionDate: 'asc' },
 					{ createdAt: 'asc' }
@@ -160,10 +142,8 @@ async function getSummary(req, res) {
 		]);
 
 		const utilizationRate = totalAssets ? Math.round((allocatedAssets / totalAssets) * 100) : 0;
-		const criticalPending = criticalAlerts + maintenanceRequests.filter((request) => request.priority === 'CRITICAL').length;
-		const utilizationSeries = assignToBuckets(allocations.map((allocation) => allocation.allocatedDate), 6, startDate, endDate).map((bucket) => bucket.value);
-		const maintenanceSeries = assignToBuckets(maintenanceRequests.map((request) => request.createdAt), 6, startDate, endDate).map((bucket) => bucket.value);
-		const chartLabels = bucketLabels(startDate, endDate, 6);
+		const criticalAlerts = criticalNotifications + criticalMaintenanceCount;
+		const maintenanceTrend = bucketSeries(maintenanceRequests.map((request) => request.createdAt), startDate, endDate, 6);
 		const utilizationBreakdown = buildUtilizationBreakdown(categories);
 
 		res.json({
@@ -184,7 +164,7 @@ async function getSummary(req, res) {
 					label: 'Maintenance Pending',
 					value: maintenanceAssets.toLocaleString(),
 					hint: 'Open maintenance requests and inspections',
-					trend: `${criticalPending.toLocaleString()} critical`
+					trend: `${criticalMaintenanceCount.toLocaleString()} critical`
 				},
 				{
 					label: 'Critical Alerts',
@@ -195,12 +175,8 @@ async function getSummary(req, res) {
 			],
 			utilizationBreakdown,
 			maintenanceSeries: {
-				labels: chartLabels,
-				values: maintenanceSeries
-			},
-			utilizationSeries: {
-				labels: utilizationBreakdown.map((item) => item.label),
-				values: utilizationBreakdown.map((item) => item.utilization)
+				labels: bucketLabels(startDate, endDate, 6),
+				values: maintenanceTrend
 			},
 			retirementRows: oldestAssets.map((asset, index) => ({
 				assetId: asset.tag,

@@ -39,7 +39,7 @@ function formatTime(value) {
 function getActivityGroup(value) {
 	const createdAt = new Date(value);
 	const now = new Date();
-	const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+	const diffInHours = Math.abs(now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
 	if (diffInHours <= 24) {
 		return 'Today';
@@ -104,7 +104,7 @@ function serializeActivityLog(entry) {
 
 	return {
 		id: entry.id,
-		group: 'Today',
+		group: getActivityGroup(entry.createdAt),
 		icon: criticalTypes.has(entry.action) ? 'alert' : bookingTypes.has(entry.action) ? 'booking' : maintenanceTypes.has(entry.action) ? 'maintenance' : 'system',
 		title: metadata.title || label.charAt(0).toUpperCase() + label.slice(1),
 		description: metadata.description || `${entry.entityType} ${entry.entityId}`,
@@ -245,7 +245,6 @@ async function resolveTransferRequest(req, res) {
 	try {
 		const { id } = req.params;
 		const decision = String(req.body?.decision || '').toUpperCase();
-		const actorId = req.body?.actorId || req.body?.toEmployeeId;
 
 		if (!['APPROVED', 'REJECTED'].includes(decision)) {
 			return res.status(400).json({ error: 'decision must be APPROVED or REJECTED' });
@@ -267,6 +266,8 @@ async function resolveTransferRequest(req, res) {
 		if (!request) {
 			return res.status(404).json({ error: 'Transfer request not found' });
 		}
+
+		const actorId = req.body?.actorId || request.toEmployeeId;
 
 		const updatedRequest = await prisma.transferRequest.update({
 			where: { id },
