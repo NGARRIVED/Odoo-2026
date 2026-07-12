@@ -1,10 +1,18 @@
 import React from "react";
 import { HelpCircle, Settings, LogOut, UserCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function Navbar() {
   const userString = localStorage.getItem("assetflow_user");
   const user = userString ? JSON.parse(userString) : null;
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("assetflow_token");
+    localStorage.removeItem("assetflow_user");
+    navigate("/login", { replace: true });
+    window.location.reload(); // Ensure all state is cleared
+  };
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6 fixed top-0 right-0 left-64 z-10">
@@ -24,9 +32,9 @@ export function Navbar() {
             {user ? user.name : "Guest"}
           </div>
         </div>
-        <Link to="/login" className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-700" title="Log Out">
+        <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-700" title="Log Out">
           <LogOut size={20} />
-        </Link>
+        </button>
       </div>
     </header>
   );

@@ -29,6 +29,11 @@ export function Audit() {
   const [isClosing, setIsClosing] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
 
+  const currentUser = JSON.parse(localStorage.getItem('assetflow_user') || '{}');
+  const canStart = ['ADMIN', 'ASSET_MANAGER'].includes(currentUser.role);
+  const canClose = ['ADMIN', 'DEPARTMENT_HEAD'].includes(currentUser.role);
+  const canVerify = ['ADMIN', 'EMPLOYEE', 'ASSET_MANAGER', 'DEPARTMENT_HEAD'].includes(currentUser.role);
+
   const authHeaders = () => {
     const token = localStorage.getItem('assetflow_token');
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -105,6 +110,25 @@ export function Audit() {
     }
   };
 
+  const handleStartCycle = async () => {
+    if (!window.confirm('Start a new audit cycle for all active assets?')) return;
+    setError('');
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/audits/start`, { method: 'POST', headers: authHeaders() });
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(data.error || 'Failed to start audit cycle.');
+      
+      setActiveCycle(data.cycle);
+      setAuditItems(data.cycle.items || []);
+      setIsClosed(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="rounded-lg border border-gray-100 bg-white p-6 text-sm text-slate-600 shadow-sm">Loading audit cycle...</div>;
   }
@@ -115,6 +139,11 @@ export function Audit() {
         <h1 className="text-2xl font-bold text-slate-900">Asset Audit</h1>
         {error && <p className="mt-4 rounded-md bg-alert p-3 text-sm text-white">{error}</p>}
         {!error && <p className="mt-3 text-sm text-slate-600">There is no open audit cycle at this time.</p>}
+        {canStart && (
+          <button onClick={handleStartCycle} className="mt-4 rounded-md bg-brand-900 px-4 py-2 text-sm font-bold text-white hover:bg-brand-800">
+            Start New Audit
+          </button>
+        )}
       </div>
     );
   }
@@ -126,7 +155,7 @@ export function Audit() {
           <h1 className="text-xl font-bold">{isClosed ? 'Cycle Closed' : activeCycle.name}</h1>
           <p className="mt-1 text-sm text-slate-200">Deadline: {formatDeadline(activeCycle.endDate)}</p>
         </div>
-        {!isClosed && (
+        {!isClosed && canClose && (
           <button type="button" onClick={handleCloseCycle} disabled={isClosing} className="rounded-md bg-success px-4 py-2 text-sm font-bold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60">
             {isClosing ? 'Closing cycle...' : 'Close Cycle & Sync Ledger'}
           </button>
@@ -136,7 +165,7 @@ export function Audit() {
       {error && <div className="rounded-md bg-alert p-3 text-sm text-white" role="alert">{error}</div>}
       {isClosed && <div className="rounded-md bg-success p-3 text-sm text-white" role="status">Cycle Closed. Missing assets have been synchronized to the ledger as lost.</div>}
       {!isClosed && hasDiscrepancies && <DiscrepancyReport items={auditItems} />}
-      <AuditChecklist items={auditItems} disabled={isClosed} updatingItemId={updatingItemId} onVerify={handleItemVerification} />
+      <AuditChecklist items={auditItems} disabled={isClosed || !canVerify} updatingItemId={updatingItemId} onVerify={handleItemVerification} />
     </div>
   );
 }

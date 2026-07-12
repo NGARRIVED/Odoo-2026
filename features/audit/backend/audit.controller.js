@@ -96,4 +96,39 @@ async function closeAuditCycle(req, res) {
   }
 }
 
-module.exports = { getActiveAuditCycle, updateAuditItem, closeAuditCycle };
+async function startAuditCycle(req, res) {
+  try {
+    const assets = await prisma.asset.findMany({ where: { status: { notIn: ['RETIRED', 'DISPOSED'] } } });
+    if (assets.length === 0) return res.status(400).json({ error: 'No assets available to audit.' });
+
+    await prisma.auditCycle.updateMany({
+      where: { status: 'OPEN' },
+      data: { status: 'CLOSED' }
+    });
+
+    const cycle = await prisma.auditCycle.create({
+      data: {
+        name: `Automated Audit Cycle ${new Date().toISOString().split('T')[0]}`,
+        scopeLocation: 'Global',
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: 'OPEN'
+      }
+    });
+
+    await prisma.auditItem.createMany({
+      data: assets.map(asset => ({
+        auditCycleId: cycle.id,
+        assetId: asset.id,
+        expectedLocation: asset.location || 'Unknown',
+        verification: 'PENDING'
+      }))
+    });
+
+    return res.status(201).json({ cycle });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to start audit cycle.' });
+  }
+}
+
+module.exports = { getActiveAuditCycle, updateAuditItem, closeAuditCycle, startAuditCycle };
