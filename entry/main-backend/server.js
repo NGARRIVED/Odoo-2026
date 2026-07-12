@@ -19,17 +19,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/organization', orgSetupRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/allocations', allocationRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
-app.use('/api/audits', auditRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/landing', landingRoutes);
+// Safely mount routes with type checking
+const routes = [
+  { path: '/api/auth', handler: authRoutes },
+  { path: '/api/dashboard', handler: dashboardRoutes },
+  { path: '/api/organization', handler: orgSetupRoutes },
+  { path: '/api/assets', handler: assetRoutes },
+  { path: '/api/allocations', handler: allocationRoutes },
+  { path: '/api/bookings', handler: bookingRoutes },
+  { path: '/api/maintenance', handler: maintenanceRoutes },
+  { path: '/api/audits', handler: auditRoutes },
+  { path: '/api/reports', handler: reportsRoutes },
+  { path: '/api/notifications', handler: notificationRoutes },
+  { path: '/api/landing', handler: landingRoutes }
+];
+
+routes.forEach(route => {
+  try {
+    if (route.handler && typeof route.handler === 'object' && route.handler._router) {
+      app.use(route.path, route.handler);
+    } else if (route.handler && typeof route.handler === 'function') {
+      app.use(route.path, route.handler);
+    }
+  } catch (err) {
+    console.warn(`Failed to mount route ${route.path}:`, err.message);
+  }
+});
 
 app.locals.prisma = prisma;
 
