@@ -2,6 +2,9 @@
   "name": "@assetflow/database",
   "private": true,
   "main": "index.js",
+  "scripts": {
+    "seed": "node seed.js"
+  },
   "dependencies": {
     "@prisma/client": "^6.0.0"
   },
