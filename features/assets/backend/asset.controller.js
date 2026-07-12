@@ -67,6 +67,9 @@ async function loadAssetById(id) {
 
 async function listAssets(req, res) {
 	try {
+		const assetScope = req.user.role === 'EMPLOYEE'
+			? { allocations: { some: { employeeId: req.user.employeeId, status: 'ACTIVE' } } }
+			: {};
 		const [
 			totalAssets,
 			availableAssets,
@@ -75,12 +78,13 @@ async function listAssets(req, res) {
 			categories,
 			assets
 		] = await Promise.all([
-			prisma.asset.count(),
-			prisma.asset.count({ where: { status: 'AVAILABLE' } }),
-			prisma.asset.count({ where: { status: 'ALLOCATED' } }),
-			prisma.asset.count({ where: { status: 'UNDER_MAINTENANCE' } }),
+			prisma.asset.count({ where: assetScope }),
+			prisma.asset.count({ where: { ...assetScope, status: 'AVAILABLE' } }),
+			prisma.asset.count({ where: { ...assetScope, status: 'ALLOCATED' } }),
+			prisma.asset.count({ where: { ...assetScope, status: 'UNDER_MAINTENANCE' } }),
 			prisma.assetCategory.findMany({ orderBy: { name: 'asc' } }),
 			prisma.asset.findMany({
+				where: assetScope,
 				orderBy: { updatedAt: 'desc' },
 				include: {
 					category: true,
@@ -117,6 +121,10 @@ async function getAsset(req, res) {
 		const asset = await loadAssetById(req.params.id);
 
 		if (!asset) {
+			return res.status(404).json({ error: 'Asset not found' });
+		}
+
+		if (req.user.role === 'EMPLOYEE' && !asset.allocations.some((allocation) => allocation.status === 'ACTIVE' && allocation.employeeId === req.user.employeeId)) {
 			return res.status(404).json({ error: 'Asset not found' });
 		}
 

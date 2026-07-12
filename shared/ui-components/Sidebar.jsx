@@ -16,16 +16,17 @@ import {
 
 export function Sidebar() {
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem('assetflow_user') || '{}');
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Organization setup", href: "/organization", icon: Building2 },
+    { name: "Organization setup", href: "/organization", icon: Building2, roles: ['ADMIN'] },
     { name: "Assets", href: "/assets", icon: Box },
-    { name: "Allocation & Transfer", href: "/allocations", icon: ArrowRightLeft },
+    { name: "Allocation & Transfer", href: "/allocations", icon: ArrowRightLeft, roles: ['ADMIN', 'ASSET_MANAGER', 'DEPARTMENT_HEAD'] },
     { name: "Resource Booking", href: "/bookings", icon: CalendarDays },
     { name: "Maintenance", href: "/maintenance", icon: Wrench },
-    { name: "Audit", href: "/audits", icon: ClipboardCheck },
-    { name: "Reports", href: "/reports", icon: BarChart3 },
+    { name: "Audit", href: "/audits", icon: ClipboardCheck, roles: ['ADMIN'] },
+    { name: "Reports", href: "/reports", icon: BarChart3, roles: ['ADMIN', 'ASSET_MANAGER', 'DEPARTMENT_HEAD'] },
     { name: "Notifications", href: "/notifications", icon: Bell },
   ];
 
@@ -42,7 +43,7 @@ export function Sidebar() {
       </div>
       
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
+        {navigation.filter((item) => !item.roles || item.roles.includes(user.role)).map((item) => {
           const isActive = location.pathname.startsWith(item.href);
           const Icon = item.icon;
           return (

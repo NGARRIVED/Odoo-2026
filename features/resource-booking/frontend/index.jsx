@@ -10,25 +10,45 @@ function today() {
 
 async function readApiResponse(response) {
   const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) return response.json();
+  if (contentType.includes('application/json')) {
+    try {
+      return await response.json();
+    } catch {
+      return { error: `Request failed with status ${response.status}.` };
+    }
+  }
 
   const text = await response.text();
-  return { error: text.includes('Cannot GET') ? 'Resource Booking API route is unavailable. Restart the backend and try again.' : text || `Request failed with status ${response.status}.` };
+  if (!text) {
+    return { error: `Request failed with status ${response.status}.` };
+  }
+
+  return { error: text };
 }
 
 export function ResourceBooking() {
   const [form, setForm] = useState({ categoryId: '', selectedAsset: '', date: today(), startTime: '', endTime: '', purpose: '' });
   const [resources, setResources] = useState([]);
   const [schedule, setSchedule] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoadingResources, setIsLoadingResources] = useState(true);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCancellingId, setIsCancellingId] = useState('');
 
   const authHeaders = () => {
     const token = localStorage.getItem('assetflow_token');
     return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const requireAuth = (message = 'Please log in to view bookings.') => {
+    const token = localStorage.getItem('assetflow_token');
+    if (!token) {
+      throw new Error(message);
+    }
   };
 
   const categories = useMemo(() => {
@@ -53,6 +73,20 @@ export function ResourceBooking() {
     });
   };
 
+  const loadBookings = async () => {
+    try {
+      requireAuth();
+      const response = await fetch(`${API_BASE}/api/bookings`, { headers: authHeaders() });
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(data.error || 'Failed to load bookings.');
+      setBookings(data.bookings || []);
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+
   const loadSchedule = async () => {
     if (!form.selectedAsset || !form.date) {
       setSchedule([]);
@@ -61,6 +95,7 @@ export function ResourceBooking() {
 
     setIsLoadingSchedule(true);
     try {
+      requireAuth();
       const response = await fetch(`${API_BASE}/api/bookings/resources/${form.selectedAsset}/schedule?date=${encodeURIComponent(form.date)}`, { headers: authHeaders() });
       const data = await readApiResponse(response);
       if (!response.ok) throw new Error(data.error || 'Failed to load this schedule.');
@@ -77,6 +112,7 @@ export function ResourceBooking() {
     let isMounted = true;
     async function loadResources() {
       try {
+        requireAuth();
         const response = await fetch(`${API_BASE}/api/bookings/resources`, { headers: authHeaders() });
         const data = await readApiResponse(response);
         if (!response.ok) throw new Error(data.error || 'Failed to load bookable resources.');
@@ -88,6 +124,7 @@ export function ResourceBooking() {
       }
     }
     loadResources();
+    loadBookings();
     return () => { isMounted = false; };
   }, []);
 
@@ -104,6 +141,7 @@ export function ResourceBooking() {
 
     setIsSubmitting(true);
     try {
+      requireAuth();
       const response = await fetch(`${API_BASE}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -114,11 +152,33 @@ export function ResourceBooking() {
 
       setSuccess('Booking confirmed and added to the calendar.');
       setForm((current) => ({ ...current, startTime: '', endTime: '', purpose: '' }));
-      await loadSchedule();
+      await Promise.all([loadSchedule(), loadBookings()]);
     } catch (bookingError) {
       setError(bookingError.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const cancelBooking = async (bookingId) => {
+    setError('');
+    setSuccess('');
+    setIsCancellingId(bookingId);
+
+    try {
+      requireAuth();
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() }
+      });
+      const data = await readApiResponse(response);
+      if (!response.ok) throw new Error(data.error || 'Failed to cancel booking.');
+      setSuccess('Booking cancelled successfully.');
+      await Promise.all([loadSchedule(), loadBookings()]);
+    } catch (cancelError) {
+      setError(cancelError.message);
+    } finally {
+      setIsCancellingId('');
     }
   };
 
@@ -137,7 +197,40 @@ export function ResourceBooking() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <BookingCalendar selectedResource={selectedResource} selectedDate={form.date} schedule={schedule} isLoading={isLoadingSchedule} />
-        <ResourceBookingForm form={form} resources={visibleResources} categories={categories} isLoadingResources={isLoadingResources} isSubmitting={isSubmitting} onChange={updateForm} onSubmit={submitBooking} />
+        <div className="space-y-4">
+          <ResourceBookingForm form={form} resources={visibleResources} categories={categories} isLoadingResources={isLoadingResources} isSubmitting={isSubmitting} onChange={updateForm} onSubmit={submitBooking} />
+          <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">Your bookings</h2>
+              <span className="text-xs font-medium text-slate-500">{bookings.length} item(s)</span>
+            </div>
+            {isLoadingBookings ? (
+              <p className="mt-4 text-sm text-slate-500">Loading your bookings...</p>
+            ) : bookings.length === 0 ? (
+              <p className="mt-4 text-sm text-slate-500">No bookings yet. Create one from the form to get started.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {bookings.map((booking) => (
+                  <li key={booking.id} className="rounded-md border border-gray-200 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{booking.asset?.name || 'Resource'}</p>
+                        <p className="text-xs text-slate-500">{booking.asset?.tag || 'Unknown'} • {new Date(booking.startTime).toLocaleString()} to {new Date(booking.endTime).toLocaleString()}</p>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700">{booking.status}</span>
+                    </div>
+                    {booking.purpose && <p className="mt-2 text-sm text-slate-600">{booking.purpose}</p>}
+                    {booking.status !== 'CANCELLED' && (
+                      <button type="button" disabled={isCancellingId === booking.id} onClick={() => cancelBooking(booking.id)} className="mt-3 rounded bg-alert px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-60">
+                        {isCancellingId === booking.id ? 'Cancelling...' : 'Cancel booking'}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,11 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+const envPaths = [path.resolve(__dirname, '../../.env'), path.resolve(process.cwd(), '.env')];
+for (const envPath of envPaths) {
+  dotenv.config({ path: envPath });
+}
+
 const prisma = require('./index');
 const bcrypt = require('bcrypt');
 
@@ -17,6 +25,12 @@ async function seed() {
   const demoPasswordHash = await bcrypt.hash('Password123!', 10);
 
   await prisma.$transaction(async (tx) => {
+    const upsertEmployee = (data) => tx.employee.upsert({
+      where: { email: data.email },
+      update: data,
+      create: data
+    });
+
     const categories = {
       laptops: await tx.assetCategory.create({
         data: {
@@ -39,45 +53,35 @@ async function seed() {
     };
 
     const employees = {
-      admin: await tx.employee.create({
-        data: {
+      admin: await upsertEmployee({
           name: 'Yash Yadav',
           email: 'yash.yadav@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'ADMIN'
-        }
       }),
-      jane: await tx.employee.create({
-        data: {
+      jane: await upsertEmployee({
           name: 'Vaishnavi Sabale',
           email: 'vaishnavi.sabale@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'EMPLOYEE'
-        }
       }),
-      moses: await tx.employee.create({
-        data: {
+      moses: await upsertEmployee({
           name: 'Pragati Sanap',
           email: 'pragati.sanap@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'ASSET_MANAGER'
-        }
       }),
-      lina: await tx.employee.create({
-        data: {
+      lina: await upsertEmployee({
           name: 'Akshada Bhor',
           email: 'akshada.bhor@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'EMPLOYEE'
-        }
       }),
-      rudrek: await tx.employee.create({
-        data: {
+      rudrek: await upsertEmployee({
           name: 'Rudrek Rokade',
           email: 'rudrek.rokade@assetflow.local',
           passwordHash: demoPasswordHash,
           role: 'DEPARTMENT_HEAD'
-        }
       })
     };
 

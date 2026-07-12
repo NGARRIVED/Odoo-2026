@@ -18,7 +18,10 @@ function parseDayRange(dateValue) {
 async function getBookableResources(req, res) {
   try {
     const resources = await prisma.asset.findMany({
-      where: { isBookable: true },
+      where: {
+        isBookable: true,
+        status: { notIn: ['UNDER_MAINTENANCE', 'LOST', 'RETIRED', 'DISPOSED'] }
+      },
       select: {
         id: true,
         tag: true,
@@ -33,6 +36,47 @@ async function getBookableResources(req, res) {
     return res.json({ resources });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to load bookable resources.' });
+  }
+}
+
+async function listBookings(req, res) {
+  try {
+    const where = req.user.role === 'EMPLOYEE' ? { bookedById: req.user.employeeId } : {};
+
+    const bookings = await prisma.booking.findMany({
+      where,
+      include: {
+        asset: { select: { id: true, tag: true, name: true, location: true, status: true } }
+      },
+      orderBy: { startTime: 'asc' }
+    });
+
+    return res.json({ bookings });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to load bookings.' });
+  }
+}
+
+async function getBooking(req, res) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.bookingId },
+      include: {
+        asset: { select: { id: true, tag: true, name: true, location: true, status: true } }
+      }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'ASSET_MANAGER' && booking.bookedById !== req.user.employeeId) {
+      return res.status(403).json({ error: 'You can only view your own bookings.' });
+    }
+
+    return res.json({ booking });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to load booking.' });
   }
 }
 
@@ -89,7 +133,11 @@ async function createBooking(req, res) {
 
   try {
     const asset = await prisma.asset.findFirst({
-      where: { id: assetId, isBookable: true },
+      where: {
+        id: assetId,
+        isBookable: true,
+        status: { notIn: ['UNDER_MAINTENANCE', 'LOST', 'RETIRED', 'DISPOSED'] }
+      },
       select: { id: true }
     });
 
@@ -130,4 +178,81 @@ async function createBooking(req, res) {
   }
 }
 
-module.exports = { getBookableResources, getAssetSchedule, createBooking };
+async function updateBooking(req, res) {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.bookingId } });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'ASSET_MANAGER' && booking.bookedById !== req.user.employeeId) {
+      return res.status(403).json({ error: 'You can only update your own bookings.' });
+    }
+
+    if (booking.status !== 'UPCOMING') {
+      return res.status(409).json({ error: 'Only upcoming bookings can be edited.' });
+    }
+
+    const { startTime, endTime, purpose } = req.body;
+    const start = startTime ? new Date(startTime) : booking.startTime;
+    const end = endTime ? new Date(endTime) : booking.endTime;
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+      return res.status(400).json({ error: 'Provide a valid start time that occurs before the end time.' });
+    }
+
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        assetId: booking.assetId,
+        id: { not: booking.id },
+        status: { in: ACTIVE_BOOKING_STATUSES },
+        startTime: { lt: end },
+        endTime: { gt: start }
+      },
+      select: { id: true }
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: 'Schedule conflict: another reservation already occupies that slot.' });
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        purpose: purpose?.trim() || booking.purpose,
+        startTime: start,
+        endTime: end
+      }
+    });
+
+    return res.json({ booking: updatedBooking });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to update booking.' });
+  }
+}
+
+async function cancelBooking(req, res) {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.bookingId } });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'ASSET_MANAGER' && booking.bookedById !== req.user.employeeId) {
+      return res.status(403).json({ error: 'You can only cancel your own bookings.' });
+    }
+
+    const cancelledBooking = await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: 'CANCELLED' }
+    });
+
+    return res.json({ booking: cancelledBooking });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to cancel booking.' });
+  }
+}
+
+module.exports = { getBookableResources, listBookings, getBooking, getAssetSchedule, createBooking, updateBooking, cancelBooking };
