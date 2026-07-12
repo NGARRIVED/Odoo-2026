@@ -1,3 +1,11 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+const envPaths = [path.resolve(__dirname, '../../.env'), path.resolve(process.cwd(), '.env')];
+for (const envPath of envPaths) {
+  dotenv.config({ path: envPath });
+}
+
 const express = require('express');
 const cors = require('cors');
 const prisma = require('../../shared/database');
@@ -36,7 +44,18 @@ app.locals.prisma = prisma;
 const PORT = process.env.PORT || 4000;
 
 if (require.main === module) {
-	app.listen(PORT, () => console.log(`AssetFlow API running on port ${PORT}`));
+	const server = app.listen(PORT, () => console.log(`AssetFlow API running on port ${PORT}`));
+
+	server.on('error', (error) => {
+		if (error.code === 'EADDRINUSE') {
+			console.error(`AssetFlow API could not start: port ${PORT} is already in use.`);
+			console.error('Stop the existing backend process, or set a different PORT in entry/main-backend/.env.');
+		} else {
+			console.error('AssetFlow API failed to start:', error.message);
+		}
+
+		process.exit(1);
+	});
 }
 
 module.exports = app;

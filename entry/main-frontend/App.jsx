@@ -13,7 +13,26 @@ import { ReportsAnalytics } from '../../features/reports-analytics/frontend';
 import { Notifications } from '../../features/notifications/frontend';
 import { Layout } from '../../shared/ui-components';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, roles }) {
+  const token = localStorage.getItem('assetflow_token');
+  const rawUser = localStorage.getItem('assetflow_user');
+
+  if (!token || !rawUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  try {
+    const user = JSON.parse(rawUser);
+
+    if (roles && !roles.includes(user.role)) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  } catch {
+    localStorage.removeItem('assetflow_token');
+    localStorage.removeItem('assetflow_user');
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 }
 
@@ -29,12 +48,12 @@ export default function App() {
         {/* Protected Layout wrapper */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/organization" element={<ProtectedRoute><OrganizationSetup /></ProtectedRoute>} />
+          <Route path="/organization" element={<ProtectedRoute roles={['ADMIN']}><OrganizationSetup /></ProtectedRoute>} />
           <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
           <Route path="/allocations" element={<ProtectedRoute><AllocationTransfer /></ProtectedRoute>} />
           <Route path="/bookings" element={<ProtectedRoute><ResourceBooking /></ProtectedRoute>} />
           <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
-          <Route path="/audits" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
+          <Route path="/audits" element={<ProtectedRoute roles={['ADMIN']}><Audit /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><ReportsAnalytics /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         </Route>

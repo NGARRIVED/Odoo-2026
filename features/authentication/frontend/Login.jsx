@@ -33,6 +33,7 @@ export function Login() {
 
       if (data.token) {
         localStorage.setItem("assetflow_token", data.token);
+        localStorage.setItem("assetflow_user", JSON.stringify(data.user));
       }
 
       navigate("/dashboard");

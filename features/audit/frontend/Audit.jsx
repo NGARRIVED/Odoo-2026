@@ -1,3 +1,2 @@
-export default function Audit() {
-  return <section />;
-}
+export { default } from './index';
+export { Audit } from './index';
