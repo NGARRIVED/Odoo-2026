@@ -5,6 +5,7 @@ const ALLOWED_STATUS_UPDATES = ['APPROVED', 'REJECTED', 'IN_PROGRESS', 'RESOLVED
 async function getMaintenanceRequests(req, res) {
   try {
     const requests = await prisma.maintenanceRequest.findMany({
+      where: req.user.role === 'EMPLOYEE' ? { raisedById: req.user.employeeId } : {},
       include: {
         asset: { select: { id: true, tag: true, name: true, status: true } },
         raisedBy: { select: { id: true, name: true, email: true } }
@@ -21,7 +22,12 @@ async function getMaintenanceRequests(req, res) {
 async function getMaintainableAssets(req, res) {
   try {
     const assets = await prisma.asset.findMany({
-      where: { status: { notIn: ['RETIRED', 'DISPOSED'] } },
+      where: {
+        status: { notIn: ['RETIRED', 'DISPOSED'] },
+        ...(req.user.role === 'EMPLOYEE' ? {
+          allocations: { some: { employeeId: req.user.employeeId, status: 'ACTIVE' } }
+        } : {})
+      },
       select: { id: true, tag: true, name: true, location: true, status: true },
       orderBy: { name: 'asc' }
     });

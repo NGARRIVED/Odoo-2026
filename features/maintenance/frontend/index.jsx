@@ -35,6 +35,8 @@ export function Maintenance() {
   const [assets, setAssets] = useState([]);
   const [showRaiseForm, setShowRaiseForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const currentUser = JSON.parse(localStorage.getItem('assetflow_user') || '{}');
+  const canManageMaintenance = ['ADMIN', 'ASSET_MANAGER'].includes(currentUser.role);
 
   const authHeaders = () => {
     const token = localStorage.getItem('assetflow_token');
@@ -135,7 +137,7 @@ export function Maintenance() {
                     <p className="mt-2 text-xs leading-5 text-gray-600">{request.issueDescription}</p>
                     <p className="mt-3 text-[11px] text-slate-500">Raised by {request.raisedBy?.name || 'Unknown user'}</p>
 
-                    {request.status === 'PENDING' && (
+                    {canManageMaintenance && request.status === 'PENDING' && (
                       <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
                         <button type="button" disabled={updatingId === request.id} onClick={() => handleStatusUpdate(request.id, 'APPROVED')} className="flex-1 rounded bg-success px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 disabled:opacity-60">
                           Approve
@@ -144,6 +146,12 @@ export function Maintenance() {
                           Reject
                         </button>
                       </div>
+                    )}
+                    {canManageMaintenance && request.status === 'APPROVED' && (
+                      <button type="button" disabled={updatingId === request.id} onClick={() => handleStatusUpdate(request.id, 'IN_PROGRESS')} className="mt-3 w-full rounded bg-brand-900 px-2 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-60">Start work</button>
+                    )}
+                    {canManageMaintenance && request.status === 'IN_PROGRESS' && (
+                      <button type="button" disabled={updatingId === request.id} onClick={() => handleStatusUpdate(request.id, 'RESOLVED')} className="mt-3 w-full rounded bg-success px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 disabled:opacity-60">Mark resolved</button>
                     )}
                   </article>
                 ))}

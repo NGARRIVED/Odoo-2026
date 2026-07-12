@@ -333,7 +333,10 @@ export function Assets() {
         setIsLoading(true);
       }
 
-      const response = await fetch(`${API_BASE}/api/assets`);
+        const token = localStorage.getItem('assetflow_token');
+        const response = await fetch(`${API_BASE}/api/assets`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
       const contentType = response.headers.get('content-type') || '';
 
       if (!contentType.includes('application/json')) {
