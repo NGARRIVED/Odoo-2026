@@ -11,6 +11,7 @@
     "dev": "node scripts/dev.js",
     "dev:frontend": "npm run dev --workspace @assetflow/main-frontend",
     "dev:backend": "npm run dev --workspace @assetflow/main-backend",
+    "db:seed": "npm run seed --workspace @assetflow/database",
     "build": "npm run build --workspace @assetflow/main-frontend",
     "lint": "echo \"Add linting when the toolchain is chosen\""
   }
