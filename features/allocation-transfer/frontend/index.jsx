@@ -1,1 +1,10 @@
-export { default as AllocationTransfer } from './AllocationTransfer';
+import React from 'react';
+
+export function AllocationTransfer() {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <h2 className="text-lg font-semibold">AllocationTransfer Component</h2>
+      <p className="text-gray-500 mt-2">This is a placeholder for the AllocationTransfer feature.</p>
+    </div>
+  );
+}
