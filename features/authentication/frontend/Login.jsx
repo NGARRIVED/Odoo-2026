@@ -108,6 +108,18 @@ export function Login() {
             </div>
           </div>
 
+          <Button
+            type="button"
+            className="w-full mt-6 bg-blue-600 hover:bg-blue-700"
+            onClick={() => {
+              const redirectUri = `${window.location.origin}/auth/callback`;
+              const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+              window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile`;
+            }}
+          >
+            Sign in with Google
+          </Button>
+
           <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">New here? </span>
             <Link to="/signup" className="font-semibold text-gray-900 hover:underline">
