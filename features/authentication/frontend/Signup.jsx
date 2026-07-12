@@ -5,12 +5,39 @@ import { Eye, EyeOff } from "lucide-react";
 
 export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    // Simulate signup for now
-    navigate("/login");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:4000/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      navigate("/login");
+    } catch (signupError) {
+      setError(signupError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +59,8 @@ export function Signup() {
               label="Full Name" 
               type="text" 
               placeholder="Jane Doe" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required 
             />
 
@@ -39,6 +68,8 @@ export function Signup() {
               label="Email" 
               type="email" 
               placeholder="name@company.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required 
             />
             
@@ -48,6 +79,8 @@ export function Signup() {
                 <Input 
                   type={showPassword ? "text" : "password"} 
                   placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required 
                 />
                 <button
@@ -66,8 +99,10 @@ export function Signup() {
               </Alert>
             </div>
 
+            {error && <Alert className="w-full">{error}</Alert>}
+
             <Button type="submit" className="w-full">
-              Create Account &rarr;
+              {isSubmitting ? "Creating account..." : "Create Account →"}
             </Button>
           </form>
 

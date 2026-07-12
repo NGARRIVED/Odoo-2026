@@ -9,8 +9,10 @@ This workspace is scaffolded to match the requested feature-oriented monorepo la
 - `entry/` for the frontend and backend application entry points
 - `docs/` for architecture notes and reference material
 
-## Next steps
+## Getting Started
 
-1. Install dependencies for the package manager you choose.
-2. Connect the entry packages to the frontend framework and backend runtime.
-3. Fill in the Prisma schema and route handlers.
+1. Run `npm install` from the repository root.
+2. Start both apps with `npm run dev`.
+3. Use `npm run dev:frontend` or `npm run dev:backend` if you want a single process.
+
+The frontend runs on Vite at `http://localhost:3000` and the backend listens on port `4000` by default.

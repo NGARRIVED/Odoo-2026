@@ -5,12 +5,42 @@ import { Eye, EyeOff } from "lucide-react";
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simulate login for now
-    navigate("/dashboard");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:4000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      if (data.token) {
+        localStorage.setItem("assetflow_token", data.token);
+      }
+
+      navigate("/dashboard");
+    } catch (loginError) {
+      setError(loginError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +62,8 @@ export function Login() {
               label="Email" 
               type="email" 
               placeholder="name@company.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required 
             />
             
@@ -46,6 +78,8 @@ export function Login() {
                 <Input 
                   type={showPassword ? "text" : "password"} 
                   placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required 
                 />
                 <button
@@ -58,8 +92,10 @@ export function Login() {
               </div>
             </div>
 
+            {error && <Alert className="w-full">{error}</Alert>}
+
             <Button type="submit" className="w-full mt-2">
-              Login &rarr;
+              {isSubmitting ? "Signing in..." : "Login →"}
             </Button>
           </form>
 

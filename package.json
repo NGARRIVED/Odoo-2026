@@ -8,8 +8,10 @@
     "entry/*"
   ],
   "scripts": {
-    "dev": "echo \"Wire the entry packages to your dev runner\"",
-    "build": "echo \"Build steps are not wired yet\"",
+    "dev": "node scripts/dev.js",
+    "dev:frontend": "npm run dev --workspace @assetflow/main-frontend",
+    "dev:backend": "npm run dev --workspace @assetflow/main-backend",
+    "build": "npm run build --workspace @assetflow/main-frontend",
     "lint": "echo \"Add linting when the toolchain is chosen\""
   }
 }
