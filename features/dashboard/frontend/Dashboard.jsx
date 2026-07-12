@@ -13,6 +13,7 @@ import {
   Users,
   Boxes
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import KpiCards from "./components/KpiCards";
 import OverdueBanner from "./components/OverdueBanner";
@@ -56,6 +57,7 @@ export function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     let isMounted = true;
@@ -160,15 +162,15 @@ export function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="primary" className="flex items-center gap-2">
+          <Button variant="primary" className="flex items-center gap-2" onClick={() => navigate('/assets')}>
             <Plus size={16} />
             Register Asset
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => navigate('/bookings')}>
             <CalendarDays size={16} />
             Book Resource
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => navigate('/maintenance')}>
             <Clock size={16} />
             Maintenance
           </Button>
@@ -194,7 +196,7 @@ export function Dashboard() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Allocations</h2>
-            <button className="text-sm text-blue-600 font-medium hover:underline">View All</button>
+            <button className="text-sm text-blue-600 font-medium hover:underline" onClick={() => navigate('/allocations')}>View All</button>
           </div>
           
           <Card className="overflow-hidden">
