@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -6,6 +7,9 @@ for (const envPath of envPaths) {
   dotenv.config({ path: envPath });
 }
 
+=======
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+>>>>>>> Stashed changes
 const express = require('express');
 const cors = require('cors');
 const prisma = require('../../shared/database');

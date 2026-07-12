@@ -1,8 +1,10 @@
 import React from 'react';
 import { Button, Card } from '../../../../shared/ui-components';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function OverdueBanner({ count, items }) {
+  const navigate = useNavigate();
   if (!count) {
     return (
       <Card className="bg-emerald-50 border-emerald-200 p-4 flex items-start justify-between gap-4">
@@ -31,7 +33,7 @@ export default function OverdueBanner({ count, items }) {
             </p>
           </div>
         </div>
-        <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-100">
+        <Button variant="outline" className="border-red-200 text-red-700 hover:bg-red-100" onClick={() => navigate('/allocations')}>
           View Assets
         </Button>
       </div>

@@ -129,10 +129,13 @@ export function Login() {
           </div>
         </CardContent>
         
-        <CardFooter>
-          <Alert className="w-full">
-            Sign up creates an employee account only. Admin roles are assigned later by system administrators.
-          </Alert>
+        <CardFooter className="flex-col gap-2">
+          <div className="w-full text-xs text-left bg-blue-50 text-blue-900 border border-blue-100 rounded-md p-3 font-mono space-y-1">
+            <div className="font-semibold text-blue-800 mb-2">Test Credentials (pass: "password123"):</div>
+            <div className="flex justify-between"><span>Asset Manager:</span><span>manager@assetflow.local</span></div>
+            <div className="flex justify-between"><span>Dept Head:</span><span>head@assetflow.local</span></div>
+            <div className="flex justify-between"><span>Employee:</span><span>employee@assetflow.local</span></div>
+          </div>
         </CardFooter>
       </Card>
     </div>
