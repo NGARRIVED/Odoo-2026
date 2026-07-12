@@ -1,0 +1,15 @@
+{
+  "name": "assetflow",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "shared/*",
+    "features/*",
+    "entry/*"
+  ],
+  "scripts": {
+    "dev": "echo \"Wire the entry packages to your dev runner\"",
+    "build": "echo \"Build steps are not wired yet\"",
+    "lint": "echo \"Add linting when the toolchain is chosen\""
+  }
+}

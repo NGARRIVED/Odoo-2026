@@ -1,0 +1,8 @@
+{
+  "name": "@assetflow/database",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@prisma/client": "^6.0.0"
+  }
+}
