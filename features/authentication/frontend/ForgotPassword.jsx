@@ -1,3 +1,2 @@
-export default function ForgotPassword() {
-  return <section />;
-}
+import React from 'react';
+export function ForgotPassword() { return <div>Forgot Password Placeholder</div>; }
