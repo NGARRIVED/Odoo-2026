@@ -1,65 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { BarChart3, Download, Filter, LineChart, PieChart, TrendingUp, Wrench, AlertTriangle, ArrowUpRight, Printer } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, BarChart3, Download, Filter, LineChart, PieChart, TrendingUp, Wrench, ArrowUpRight, Printer } from 'lucide-react';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Select } from '../../../shared/ui-components';
 import { formatCurrency } from '../../../shared/utils/formatters';
+
+const API_BASE = 'http://localhost:4000/api';
 
 const periodOptions = [
   { label: 'Last 30 Days', value: '30d' },
   { label: 'Last Quarter', value: 'quarter' },
   { label: 'Year to Date', value: 'ytd' },
 ];
-
-const departmentOptions = [
-  { label: 'All Departments', value: 'all' },
-  { label: 'IT', value: 'it' },
-  { label: 'Facilities', value: 'facilities' },
-  { label: 'Fleet', value: 'fleet' },
-];
-
-const reportSets = {
-  '30d': {
-    totalAssets: 12450,
-    utilization: 78,
-    maintenancePending: 142,
-    criticalAlerts: 3,
-    utilizationSeries: [62, 65, 67, 68, 70, 72, 74, 76, 79, 80, 78, 81],
-    maintenanceSeries: [18, 16, 17, 19, 22, 26, 24, 23, 28, 30, 31, 33],
-    retirementRows: [
-      { assetId: 'AST-9921', category: 'HVAC Unit', location: 'Roof North', cost: 45000, status: 'Critical (12 Days)' },
-      { assetId: 'VEH-044', category: 'Service Van', location: 'Depot A', cost: 38500, status: 'Warning (45 Days)' },
-      { assetId: 'IT-LPT-88', category: 'Workstation', location: 'Office 3B', cost: 1200, status: 'Scheduled (80 Days)' },
-    ],
-  },
-  quarter: {
-    totalAssets: 12880,
-    utilization: 81,
-    maintenancePending: 176,
-    criticalAlerts: 5,
-    utilizationSeries: [64, 66, 68, 69, 71, 73, 76, 78, 79, 81, 82, 83],
-    maintenanceSeries: [20, 21, 22, 26, 28, 29, 31, 32, 33, 36, 39, 41],
-    retirementRows: [
-      { assetId: 'AST-1133', category: 'Backup Generator', location: 'Plant 2', cost: 78000, status: 'Critical (9 Days)' },
-      { assetId: 'VEH-107', category: 'Delivery Truck', location: 'Depot B', cost: 52000, status: 'Warning (38 Days)' },
-      { assetId: 'IT-LPT-20', category: 'Laptop Fleet', location: 'IT Storage', cost: 980, status: 'Scheduled (77 Days)' },
-    ],
-  },
-  ytd: {
-    totalAssets: 13200,
-    utilization: 84,
-    maintenancePending: 208,
-    criticalAlerts: 7,
-    utilizationSeries: [66, 67, 70, 71, 73, 75, 77, 80, 82, 84, 85, 86],
-    maintenanceSeries: [22, 23, 25, 28, 31, 35, 36, 37, 40, 43, 45, 48],
-    retirementRows: [
-      { assetId: 'AST-0412', category: 'Chiller', location: 'HQ Roof', cost: 91000, status: 'Critical (5 Days)' },
-      { assetId: 'VEH-210', category: 'Pool Sedan', location: 'Fleet Lot', cost: 27500, status: 'Warning (30 Days)' },
-      { assetId: 'IT-MON-12', category: 'Monitors', location: 'Storage C', cost: 180, status: 'Scheduled (68 Days)' },
-    ],
-  },
-};
-
-const utilizationLabels = ['HVAC', 'Lifts', 'Pumps', 'Gen.', 'Mowers', 'Proj.'];
-const utilizationBars = [92, 76, 63, 58, 44, 38];
 
 function MetricCard({ label, value, hint, icon: Icon, trend, accent = 'brand' }) {
   return (
@@ -105,8 +55,21 @@ function Sparkline({ values }) {
   );
 }
 
-function downloadTextFile(content, fileName, type = 'text/plain') {
-  const blob = new Blob([content], { type });
+function downloadCsv(rows, fileName) {
+  const escapeValue = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const csvRows = [
+    ['Asset ID', 'Category', 'Location', 'Est. Replacement Cost', 'Status', 'Action'].join(','),
+    ...rows.map((row) => [
+      row.assetId,
+      row.category,
+      row.location,
+      row.cost,
+      row.status,
+      row.action
+    ].map(escapeValue).join(','))
+  ];
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -119,10 +82,46 @@ export default function ReportsAnalytics() {
   const [period, setPeriod] = useState('30d');
   const [department, setDepartment] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [summaryCards, setSummaryCards] = useState([]);
+  const [utilizationBreakdown, setUtilizationBreakdown] = useState([]);
+  const [maintenanceSeries, setMaintenanceSeries] = useState({ labels: [], values: [] });
+  const [retirementRows, setRetirementRows] = useState([]);
+  const [departments, setDepartments] = useState([{ label: 'All Departments', value: 'all' }]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const data = reportSets[period];
+  const loadSummary = async (periodValue = period, departmentValue = department) => {
+    setLoading(true);
+    setError('');
 
-  const filteredDepartmentLabel = useMemo(() => departmentOptions.find((option) => option.value === department)?.label || 'All Departments', [department]);
+    try {
+      const params = new URLSearchParams({ period: periodValue, department: departmentValue });
+      const response = await fetch(`${API_BASE}/reports/summary?${params.toString()}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to load reports summary');
+      }
+
+      setSummaryCards(payload.summaryCards || []);
+      setUtilizationBreakdown(payload.utilizationBreakdown || []);
+      setMaintenanceSeries(payload.maintenanceSeries || { labels: [], values: [] });
+      setRetirementRows(payload.retirementRows || []);
+      setDepartments([{ label: 'All Departments', value: 'all' }, ...(payload.departments || [])]);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSummary();
+  }, []);
+
+  const selectedDepartmentLabel = useMemo(() => {
+    return departments.find((item) => item.value === department)?.label || 'All Departments';
+  }, [departments, department]);
 
   const handleExportPdf = () => {
     window.print();
@@ -133,11 +132,16 @@ export default function ReportsAnalytics() {
   };
 
   const handleQuickExport = () => {
-    const rows = data.retirementRows
-      .map((row) => `${row.assetId},${row.category},${row.location},${formatCurrency(row.cost)},${row.status}`)
-      .join('\n');
-    downloadTextFile(`Asset ID,Category,Location,Est. Replacement Cost,Status\n${rows}`, 'assetflow-retirement-assets.csv', 'text/csv;charset=utf-8;');
+    downloadCsv(retirementRows, 'assetflow-retirement-assets.csv');
   };
+
+  const renderUtilizationBars = utilizationBreakdown.length > 0
+    ? utilizationBreakdown
+    : [
+        { label: 'No data', utilization: 0, idle: 100 }
+      ];
+
+  const periodLabel = periodOptions.find((option) => option.value === period)?.label || 'Last 30 Days';
 
   return (
     <div className="space-y-6">
@@ -148,7 +152,7 @@ export default function ReportsAnalytics() {
           </div>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-950 lg:text-4xl">Reports & Analytics</h1>
-            <p className="mt-2 max-w-2xl text-sm text-gray-600">Overview of asset utilization, maintenance health, and lifecycle risk.</p>
+            <p className="mt-2 max-w-2xl text-sm text-gray-600">Overview of asset utilization, maintenance health, and lifecycle risk from live database data.</p>
           </div>
         </div>
 
@@ -163,37 +167,19 @@ export default function ReportsAnalytics() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Total Active Assets"
-          value={data.totalAssets.toLocaleString()}
-          hint={`${filteredDepartmentLabel} · ${periodOptions.find((option) => option.value === period)?.label}`}
-          icon={PieChart}
-          trend="+2.4% vs last month"
-        />
-        <MetricCard
-          label="Avg. Utilization Rate"
-          value={`${data.utilization}%`}
-          hint="Average across tracked departments"
-          icon={TrendingUp}
-          trend="+5.1% vs last month"
-          accent="brand"
-        />
-        <MetricCard
-          label="Maintenance Pending"
-          value={data.maintenancePending.toLocaleString()}
-          hint="Open maintenance requests and inspections"
-          icon={Wrench}
-          trend="-12 tasks vs last month"
-          accent="warning"
-        />
-        <MetricCard
-          label="Critical Alerts"
-          value={data.criticalAlerts.toLocaleString()}
-          hint="Requires immediate action"
-          icon={AlertTriangle}
-          trend="Escalated items"
-          accent="danger"
-        />
+        {summaryCards.map((card) => (
+          <MetricCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            hint={card.hint}
+            trend={card.trend}
+            icon={
+              card.label.includes('Utilization') ? TrendingUp : card.label.includes('Maintenance') ? Wrench : card.label.includes('Critical') ? AlertTriangle : PieChart
+            }
+            accent={card.label.includes('Maintenance') ? 'warning' : card.label.includes('Critical') ? 'danger' : 'brand'}
+          />
+        ))}
       </div>
 
       {showFilters ? (
@@ -202,18 +188,26 @@ export default function ReportsAnalytics() {
             <Select
               label="Time Period"
               value={period}
-              onChange={(event) => setPeriod(event.target.value)}
+              onChange={(event) => {
+                const nextPeriod = event.target.value;
+                setPeriod(nextPeriod);
+                loadSummary(nextPeriod, department);
+              }}
               options={periodOptions}
             />
             <Select
               label="Department"
               value={department}
-              onChange={(event) => setDepartment(event.target.value)}
-              options={departmentOptions}
+              onChange={(event) => {
+                const nextDepartment = event.target.value;
+                setDepartment(nextDepartment);
+                loadSummary(period, nextDepartment);
+              }}
+              options={departments}
             />
             <div className="rounded-2xl border border-dashed border-brand-200 bg-white p-4 text-sm text-gray-600">
               <p className="font-medium text-gray-900">Current filter</p>
-              <p className="mt-2">{periodOptions.find((option) => option.value === period)?.label} · {filteredDepartmentLabel}</p>
+              <p className="mt-2">{periodLabel} · {selectedDepartmentLabel}</p>
             </div>
           </CardContent>
         </Card>
@@ -224,30 +218,34 @@ export default function ReportsAnalytics() {
           <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-gray-200 bg-white/80">
             <div>
               <CardTitle className="text-base">Asset Utilization (Most-used vs. Idle)</CardTitle>
-              <p className="text-sm text-gray-500">How often the highest-value asset groups are being used</p>
+              <p className="text-sm text-gray-500">How often each tracked category is being used</p>
             </div>
-            <Badge variant="default">{periodOptions.find((option) => option.value === period)?.label}</Badge>
+            <Badge variant="default">{periodLabel}</Badge>
           </CardHeader>
           <CardContent className="space-y-5 pt-6">
-            <div className="flex items-center justify-between gap-3 text-xs text-gray-500">
-              <span>100%</span>
-              <span>Highly Utilized</span>
-            </div>
-            <div className="space-y-3">
-              {utilizationLabels.map((label, index) => (
-                <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)_48px] items-center gap-3">
-                  <span className="text-sm text-gray-700">{label}</span>
-                  <div className="h-4 rounded-full bg-gray-100">
-                    <div className="h-4 rounded-full bg-brand-700" style={{ width: `${utilizationBars[index]}%` }} />
-                  </div>
-                  <span className="text-right text-sm font-medium text-gray-900">{utilizationBars[index]}%</span>
+            {loading ? (
+              <div className="py-8 text-center text-sm text-gray-500">Loading utilization data...</div>
+            ) : error ? (
+              <div className="py-8 text-center text-sm text-alert">{error}</div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {renderUtilizationBars.map((item) => (
+                    <div key={item.label} className="grid grid-cols-[72px_minmax(0,1fr)_48px] items-center gap-3">
+                      <span className="text-sm text-gray-700">{item.label}</span>
+                      <div className="h-4 rounded-full bg-gray-100">
+                        <div className="h-4 rounded-full bg-brand-700" style={{ width: `${item.utilization}%` }} />
+                      </div>
+                      <span className="text-right text-sm font-medium text-gray-900">{item.utilization}%</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-brand-700" /> Highly Utilized</span>
-              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-gray-300" /> Mostly Idle</span>
-            </div>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-brand-700" /> Active use</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-gray-300" /> Idle capacity</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -256,12 +254,12 @@ export default function ReportsAnalytics() {
             <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-gray-200">
               <div>
                 <CardTitle className="text-base">Maintenance Frequency</CardTitle>
-                <p className="text-sm text-gray-500">Work orders closed per week</p>
+                <p className="text-sm text-gray-500">Work orders created in the selected period</p>
               </div>
-              <Badge variant="brand">{filteredDepartmentLabel}</Badge>
+              <Badge variant="brand">{selectedDepartmentLabel}</Badge>
             </CardHeader>
             <CardContent className="pt-6">
-              <Sparkline values={data.maintenanceSeries} />
+              {loading ? <div className="py-8 text-center text-sm text-gray-500">Loading maintenance trend...</div> : error ? <div className="py-8 text-center text-sm text-alert">{error}</div> : <Sparkline values={maintenanceSeries.values || []} />}
             </CardContent>
           </Card>
 
@@ -273,14 +271,14 @@ export default function ReportsAnalytics() {
               <div className="flex items-center justify-between rounded-2xl bg-gray-50 p-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Utilization upside</p>
-                  <p className="text-xs text-gray-500">Peak groups still have room for balancing</p>
+                  <p className="text-xs text-gray-500">Peak categories still have room for balancing</p>
                 </div>
                 <ArrowUpRight className="text-green-600" size={18} />
               </div>
               <div className="flex items-center justify-between rounded-2xl bg-gray-50 p-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Maintenance backlog</p>
-                  <p className="text-xs text-gray-500">Pending requests trending lower week over week</p>
+                  <p className="text-xs text-gray-500">Pending requests are coming straight from Prisma counts</p>
                 </div>
                 <LineChart className="text-brand-700" size={18} />
               </div>
@@ -293,10 +291,10 @@ export default function ReportsAnalytics() {
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-gray-200 bg-white/80">
           <div>
             <CardTitle className="text-base">Assets Nearing Retirement</CardTitle>
-            <p className="text-sm text-gray-500">Expected end-of-life within 90 days</p>
+            <p className="text-sm text-gray-500">Oldest assets in the selected scope</p>
           </div>
           <Button variant="ghost" onClick={handleQuickExport}>
-            <Download size={16} className="mr-2" /> View All
+            <Download size={16} className="mr-2" /> Export CSV
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -313,8 +311,8 @@ export default function ReportsAnalytics() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {data.retirementRows.map((row, index) => {
-                  const statusVariant = index === 0 ? 'danger' : index === 1 ? 'warning' : 'default';
+                {retirementRows.map((row, index) => {
+                  const statusVariant = row.status === 'Retired' ? 'default' : index === 0 ? 'danger' : index === 1 ? 'warning' : 'default';
 
                   return (
                     <tr key={row.assetId} className="hover:bg-gray-50">
@@ -325,7 +323,7 @@ export default function ReportsAnalytics() {
                       <td className="px-6 py-4"><Badge variant={statusVariant}>{row.status}</Badge></td>
                       <td className="px-6 py-4 text-right">
                         <Button size="sm" variant={index === 2 ? 'outline' : 'ghost'}>
-                          {index === 2 ? 'Review' : 'Initiate Procurement'}
+                          {row.action}
                         </Button>
                       </td>
                     </tr>

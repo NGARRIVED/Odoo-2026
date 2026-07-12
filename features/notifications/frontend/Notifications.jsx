@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -24,163 +24,7 @@ import {
 } from '../../../shared/ui-components';
 import ActivityLog from './ActivityLog';
 
-const initialNotifications = [
-  {
-    id: 'notif-1',
-    type: 'critical',
-    category: 'critical',
-    title: 'Server Rack Cooling Failure',
-    message:
-      'Temperature threshold exceeded on Rack A4, Data Center 2. Immediate maintenance required to prevent hardware damage.',
-    asset: 'Asset: SR-2049',
-    timestamp: '2026-07-12T10:42:00',
-    unread: true,
-    icon: 'critical',
-    tag: 'Critical',
-    tagVariant: 'danger',
-  },
-  {
-    id: 'notif-2',
-    type: 'approval',
-    category: 'approval',
-    title: 'Asset Transfer Request',
-    message: "Sarah Jenkins requested transfer of 'MacBook Pro M2' from IT Dept to Marketing.",
-    asset: 'Awaiting approval',
-    timestamp: '2026-07-12T09:15:00',
-    unread: true,
-    icon: 'approval',
-    tag: 'Pending',
-    tagVariant: 'warning',
-    request: true,
-  },
-  {
-    id: 'notif-3',
-    type: 'booking',
-    category: 'booking',
-    title: 'Conference Room C Booked',
-    message: "Booked by Engineering Team for 'Quarterly Planning'.",
-    asset: '14:00 - 16:00 today',
-    timestamp: '2026-07-12T08:30:00',
-    unread: false,
-    icon: 'booking',
-    tag: 'Booking',
-    tagVariant: 'success',
-  },
-  {
-    id: 'notif-4',
-    type: 'maintenance',
-    category: 'maintenance',
-    title: 'Routine Maintenance Completed',
-    message: 'Quarterly HVAC inspection completed for Building A. No issues found.',
-    asset: 'Completed smoothly',
-    timestamp: '2026-07-11T16:45:00',
-    unread: false,
-    icon: 'maintenance',
-    tag: 'Resolved',
-    tagVariant: 'default',
-  },
-  {
-    id: 'notif-5',
-    type: 'audit',
-    category: 'approval',
-    title: 'Audit Discrepancy Escalated',
-    message: 'Three unverified assets moved to escalation queue for manual inspection.',
-    asset: 'Audit cycle Q3-26',
-    timestamp: '2026-07-11T13:10:00',
-    unread: true,
-    icon: 'security',
-    tag: 'Escalated',
-    tagVariant: 'danger',
-  },
-  {
-    id: 'notif-6',
-    type: 'booking',
-    category: 'booking',
-    title: 'Training Pod Released',
-    message: 'Room B3 is now available again after the dev onboarding workshop.',
-    asset: 'Available for booking',
-    timestamp: '2026-07-11T11:20:00',
-    unread: false,
-    icon: 'booking',
-    tag: 'Availability',
-    tagVariant: 'success',
-  },
-];
-
-const activitySeed = [
-  {
-    id: 'log-1',
-    group: 'Today',
-    icon: 'alert',
-    title: 'Critical alert routed to maintenance',
-    description: 'Cooling failure on Rack A4 was assigned to Facilities and marked urgent.',
-    actor: 'System',
-    entity: 'Rack A4 / SR-2049',
-    timestamp: '2026-07-12T10:42:00',
-    tag: 'Critical',
-    tagVariant: 'danger',
-  },
-  {
-    id: 'log-2',
-    group: 'Today',
-    icon: 'transfer',
-    title: 'Transfer approval requested',
-    description: 'Sarah Jenkins requested an allocation move from IT to Marketing.',
-    actor: 'Sarah Jenkins',
-    entity: 'MacBook Pro M2',
-    timestamp: '2026-07-12T09:15:00',
-    tag: 'Approval',
-    tagVariant: 'warning',
-  },
-  {
-    id: 'log-3',
-    group: 'Today',
-    icon: 'booking',
-    title: 'Meeting room booking confirmed',
-    description: 'Engineering reserved Conference Room C for quarterly planning.',
-    actor: 'Engineering Team',
-    entity: 'Conference Room C',
-    timestamp: '2026-07-12T08:30:00',
-    tag: 'Booking',
-    tagVariant: 'success',
-  },
-  {
-    id: 'log-4',
-    group: 'Yesterday',
-    icon: 'maintenance',
-    title: 'Quarterly HVAC maintenance completed',
-    description: 'Inspection closed with no issues and the work order marked resolved.',
-    actor: 'Facilities',
-    entity: 'Building A',
-    timestamp: '2026-07-11T16:45:00',
-    tag: 'Resolved',
-    tagVariant: 'default',
-  },
-  {
-    id: 'log-5',
-    group: 'Yesterday',
-    icon: 'audit',
-    title: 'Audit discrepancy escalated',
-    description: 'Three missing items moved into the escalation queue for review.',
-    actor: 'Audit Team',
-    entity: 'Q3-26 cycle',
-    timestamp: '2026-07-11T13:10:00',
-    tag: 'Escalated',
-    tagVariant: 'danger',
-  },
-  {
-    id: 'log-6',
-    group: 'This Week',
-    icon: 'system',
-    title: 'Mass notification digest sent',
-    description: 'A daily digest was sent to department heads and asset managers.',
-    actor: 'Notifications Service',
-    entity: 'Digest job',
-    timestamp: '2026-07-09T08:00:00',
-    tag: 'System',
-    tagVariant: 'brand',
-  },
-];
+const API_BASE = 'http://localhost:4000/api';
 
 const viewOptions = [
   { label: 'All Notifications', value: 'all' },
@@ -247,73 +91,121 @@ function SummaryCard({ icon: Icon, label, value, hint, accent = 'brand' }) {
   );
 }
 
+function isWithinRange(timestamp, range) {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (range === '7d') return diffDays <= 7;
+  if (range === '30d') return diffDays <= 30;
+  return diffDays <= 90;
+}
+
+function getLeadingIcon(item) {
+  if (item.category === 'critical') return AlertTriangle;
+  if (item.category === 'approval' || item.request) return ShieldAlert;
+  if (item.category === 'booking') return CalendarClock;
+  if (item.category === 'maintenance') return ShieldCheck;
+  return ArrowRightLeft;
+}
+
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [stats, setStats] = useState({ total: 0, unread: 0, critical: 0, approvals: 0, bookings: 0, maintenance: 0 });
+  const [viewCounts, setViewCounts] = useState({ all: 0, critical: 0, approval: 0, booking: 0, maintenance: 0 });
   const [search, setSearch] = useState('');
   const [view, setView] = useState('all');
   const [dateRange, setDateRange] = useState('7d');
   const [visibleCount, setVisibleCount] = useState(4);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const stats = useMemo(() => ({
-    total: 124,
-    critical: notifications.filter((item) => item.type === 'critical' || item.tagVariant === 'danger').length + 2,
-    approvals: notifications.filter((item) => item.category === 'approval').length + 6,
-    bookings: notifications.filter((item) => item.category === 'booking').length + 8,
-  }), [notifications]);
+  const loadNotifications = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/notifications`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to load notifications');
+      }
+
+      setNotifications(payload.notifications || []);
+      setActivityLogs(payload.activityLogs || []);
+      setStats(payload.stats || stats);
+      setViewCounts(payload.viewCounts || viewCounts);
+      setVisibleCount(4);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
 
   const filteredNotifications = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return notifications.filter((notification) => {
-      const matchesView = view === 'all' || notification.type === view || notification.category === view;
-      const matchesSearch = !query || [notification.title, notification.message, notification.asset].some((field) => field.toLowerCase().includes(query));
-      return matchesView && matchesSearch;
+      const matchesView = view === 'all' || notification.category === view;
+      const matchesSearch = !query || [notification.title, notification.message, notification.asset, notification.tag]
+        .some((field) => String(field).toLowerCase().includes(query));
+      const matchesRange = isWithinRange(notification.timestamp, dateRange);
+
+      return matchesView && matchesSearch && matchesRange;
     });
-  }, [notifications, search, view]);
+  }, [notifications, search, view, dateRange]);
 
   const visibleNotifications = filteredNotifications.slice(0, visibleCount);
-  const unreadCount = notifications.filter((notification) => notification.unread).length;
+  const unreadCount = stats.unread;
 
-  const setNotificationReadState = (id, unread) => {
-    setNotifications((current) => current.map((notification) => (notification.id === id ? { ...notification, unread } : notification)));
+  const exportLogs = () => {
+    const rows = [...notifications, ...activityLogs].map((item) => ({
+      timestamp: item.timestamp,
+      type: item.type || item.category || 'activity',
+      title: item.title,
+      message: item.message || item.description,
+      asset: item.asset || item.entity,
+      status: item.tag,
+      unread: item.unread || false,
+    }));
+
+    downloadCsv(rows, 'assetflow-notification-log.csv');
   };
 
-  const handleApprove = (id) => {
-    setNotifications((current) => current.map((notification) => (notification.id === id ? { ...notification, unread: false, tag: 'Approved', tagVariant: 'success', message: `${notification.message} Approved by operations.` } : notification)));
+  const updateReadState = async (id, isRead) => {
+    await fetch(`${API_BASE}/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead })
+    });
+
+    loadNotifications();
   };
 
-  const handleDeny = (id) => {
-    setNotifications((current) => current.map((notification) => (notification.id === id ? { ...notification, unread: false, tag: 'Denied', tagVariant: 'danger', message: `${notification.message} Request denied.` } : notification)));
+  const markAllRead = async () => {
+    await fetch(`${API_BASE}/notifications/read-all`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    loadNotifications();
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications((current) => current.map((notification) => ({ ...notification, unread: false })));
-  };
+  const handleDecision = async (item, decision) => {
+    await fetch(`${API_BASE}/notifications/transfer-requests/${item.relatedEntityId}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision })
+    });
 
-  const handleExport = () => {
-    downloadCsv(
-      [
-        ...notifications.map((item) => ({
-          timestamp: formatTime(item.timestamp),
-          type: item.type,
-          title: item.title,
-          message: item.message,
-          asset: item.asset,
-          status: item.tag,
-          unread: item.unread,
-        })),
-        ...activitySeed.map((item) => ({
-          timestamp: formatTime(item.timestamp),
-          type: item.icon,
-          title: item.title,
-          message: item.description,
-          asset: item.entity,
-          status: item.tag,
-          unread: false,
-        })),
-      ],
-      'assetflow-notification-log.csv'
-    );
+    loadNotifications();
   };
 
   const handleLoadMore = () => {
@@ -323,9 +215,14 @@ export default function Notifications() {
   const summaryCards = [
     { label: 'All Notifications', value: stats.total, hint: `${unreadCount} unread items require attention`, icon: Bell, accent: 'brand' },
     { label: 'Critical Alerts', value: stats.critical, hint: 'Hardware, safety, and service outages', icon: AlertTriangle, accent: 'danger' },
-    { label: 'Approvals', value: stats.approvals, hint: 'Transfer, maintenance, and audit actions', icon: ShieldCheck, accent: 'warning' },
+    { label: 'Approvals', value: stats.approvals, hint: 'Transfer decisions awaiting action', icon: ShieldAlert, accent: 'warning' },
     { label: 'Bookings', value: stats.bookings, hint: 'New reservations and room releases', icon: CalendarClock, accent: 'success' },
   ];
+
+  const viewOptionsWithCounts = viewOptions.map((option) => ({
+    ...option,
+    count: viewCounts[option.value] ?? 0
+  }));
 
   return (
     <div className="space-y-6">
@@ -336,15 +233,15 @@ export default function Notifications() {
           </div>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-950 lg:text-4xl">Activity Logs & Notifications</h1>
-            <p className="mt-2 max-w-2xl text-sm text-gray-600">System events, alerts, approvals, and notification history in one place.</p>
+            <p className="mt-2 max-w-2xl text-sm text-gray-600">System events, alerts, approvals, and notification history stored in Prisma.</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={exportLogs}>
             <Download size={16} className="mr-2" /> Export Logs
           </Button>
-          <Button onClick={handleMarkAllRead}>
+          <Button onClick={markAllRead}>
             <CheckCheck size={16} className="mr-2" /> Mark All Read
           </Button>
         </div>
@@ -363,26 +260,20 @@ export default function Notifications() {
               <CardTitle className="text-base">Views</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {viewOptions.map((option) => {
-                const count = option.value === 'all'
-                  ? notifications.length
-                  : notifications.filter((item) => item.type === option.value || item.category === option.value).length;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      setView(option.value);
-                      setVisibleCount(4);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${view === option.value ? 'border-brand-300 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                  >
-                    <span className="text-sm font-medium text-gray-900">{option.label}</span>
-                    <Badge variant={view === option.value ? 'brand' : 'default'}>{count}</Badge>
-                  </button>
-                );
-              })}
+              {viewOptionsWithCounts.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setView(option.value);
+                    setVisibleCount(4);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${view === option.value ? 'border-brand-300 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                >
+                  <span className="text-sm font-medium text-gray-900">{option.label}</span>
+                  <Badge variant={view === option.value ? 'brand' : 'default'}>{option.count}</Badge>
+                </button>
+              ))}
             </CardContent>
           </Card>
 
@@ -396,7 +287,7 @@ export default function Notifications() {
                 placeholder="Search logs and events..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                icon={<Search size={16} />}
+                icon={Search}
               />
               <Select
                 label="Date Range"
@@ -424,13 +315,16 @@ export default function Notifications() {
               <Badge variant="default">{filteredNotifications.length} filtered</Badge>
             </CardHeader>
             <CardContent className="p-0">
-              {visibleNotifications.length === 0 ? (
+              {loading ? (
+                <div className="p-8 text-center text-sm text-gray-500">Loading notifications from the database...</div>
+              ) : error ? (
+                <div className="p-8 text-center text-sm text-alert">{error}</div>
+              ) : visibleNotifications.length === 0 ? (
                 <div className="p-8 text-center text-sm text-gray-500">No notifications match your current filters.</div>
               ) : (
                 <div className="divide-y divide-gray-200">
                   {visibleNotifications.map((item) => {
-                    const leadingIcon = item.icon === 'critical' ? AlertTriangle : item.icon === 'approval' ? ShieldAlert : item.icon === 'booking' ? CalendarClock : ArrowRightLeft;
-                    const Icon = leadingIcon;
+                    const Icon = getLeadingIcon(item);
 
                     return (
                       <article key={item.id} className="flex gap-4 border-l-4 border-l-transparent px-6 py-5 transition-colors hover:bg-gray-50/80" style={item.unread ? { borderLeftColor: '#dc2626' } : undefined}>
@@ -455,22 +349,19 @@ export default function Notifications() {
 
                           {item.request ? (
                             <div className="flex flex-wrap gap-2">
-                              <Button size="sm" onClick={() => handleApprove(item.id)}>
+                              <Button size="sm" onClick={() => handleDecision(item, 'APPROVED')}>
                                 Approve
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleDeny(item.id)}>
+                              <Button size="sm" variant="outline" onClick={() => handleDecision(item, 'REJECTED')}>
                                 Deny
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => setNotificationReadState(item.id, false)}>
-                                Mark Read
                               </Button>
                             </div>
                           ) : (
                             <div className="flex flex-wrap gap-2">
-                              <Button size="sm" variant="ghost" onClick={() => setNotificationReadState(item.id, false)}>
+                              <Button size="sm" variant="ghost" onClick={() => updateReadState(item.id, false)}>
                                 Mark Read
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => setNotificationReadState(item.id, true)}>
+                              <Button size="sm" variant="outline" onClick={() => updateReadState(item.id, true)}>
                                 Mark Unread
                               </Button>
                             </div>
@@ -482,7 +373,7 @@ export default function Notifications() {
                 </div>
               )}
 
-              {visibleNotifications.length < filteredNotifications.length ? (
+              {!loading && !error && visibleNotifications.length < filteredNotifications.length ? (
                 <div className="border-t border-gray-200 p-4 text-center">
                   <Button variant="ghost" onClick={handleLoadMore}>Load More</Button>
                 </div>
@@ -492,7 +383,7 @@ export default function Notifications() {
 
           <Card className="p-6">
             <ActivityLog
-              logs={activitySeed}
+              logs={activityLogs}
               onLoadMore={handleLoadMore}
               visibleCount={visibleNotifications.length}
               totalCount={filteredNotifications.length}
