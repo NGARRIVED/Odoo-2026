@@ -111,7 +111,9 @@ model Employee {
   id              String       @id @default(cuid())
   name            String
   email           String       @unique
-  passwordHash    String
+  passwordHash    String?
+  googleId        String?      @unique
+  avatar          String?
   role            Role         @default(EMPLOYEE)
   status          StatusFlag   @default(ACTIVE)
   departmentId    String?
