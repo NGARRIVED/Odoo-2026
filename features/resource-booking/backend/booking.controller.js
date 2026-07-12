@@ -102,7 +102,8 @@ async function getAssetSchedule(req, res) {
         purpose: true,
         startTime: true,
         endTime: true,
-        status: true
+        status: true,
+        bookedById: true
       },
       orderBy: { startTime: 'asc' }
     });
@@ -178,6 +179,7 @@ async function createBooking(req, res) {
   }
 }
 
+<<<<<<< Updated upstream
 async function updateBooking(req, res) {
   try {
     const booking = await prisma.booking.findUnique({ where: { id: req.params.bookingId } });
@@ -250,9 +252,34 @@ async function cancelBooking(req, res) {
     });
 
     return res.json({ booking: cancelledBooking });
+=======
+async function cancelBooking(req, res) {
+  const { id } = req.params;
+  const employeeId = req.user.employeeId;
+  const role = req.user.role;
+
+  try {
+    const booking = await prisma.booking.findUnique({ where: { id } });
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+
+    if (booking.bookedById !== employeeId && role !== 'ADMIN' && role !== 'ASSET_MANAGER') {
+      return res.status(403).json({ error: 'You can only cancel your own bookings.' });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: { status: 'CANCELLED' }
+    });
+
+    return res.json({ message: 'Booking cancelled successfully.', booking: updated });
+>>>>>>> Stashed changes
   } catch (error) {
     return res.status(500).json({ error: 'Failed to cancel booking.' });
   }
 }
 
+<<<<<<< Updated upstream
 module.exports = { getBookableResources, listBookings, getBooking, getAssetSchedule, createBooking, updateBooking, cancelBooking };
+=======
+module.exports = { getBookableResources, getAssetSchedule, createBooking, cancelBooking };
+>>>>>>> Stashed changes
