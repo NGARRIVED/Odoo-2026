@@ -18,11 +18,11 @@ function MetricCard({ label, value, hint, icon: Icon, trend, accent = 'brand' })
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">{label}</p>
-            <div className="mt-3 text-3xl font-semibold text-gray-950">{value}</div>
+            <div className="mt-3 text-3xl font-semibold text-brand-900">{value}</div>
             <p className="mt-2 text-sm text-gray-500">{hint}</p>
-            {trend ? <p className="mt-2 text-xs font-medium text-green-600">{trend}</p> : null}
+            {trend ? <p className="mt-2 text-xs font-medium text-brand-700">{trend}</p> : null}
           </div>
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent === 'danger' ? 'bg-red-50 text-red-600' : accent === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-brand-50 text-brand-700'}`}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-900">
             <Icon size={18} />
           </div>
         </div>
@@ -145,13 +145,13 @@ export default function ReportsAnalytics() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-brand-50/40 p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-900 shadow-sm">
             <BarChart3 size={14} /> Reports & Analytics
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-950 lg:text-4xl">Reports & Analytics</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-brand-900 lg:text-4xl">Reports & Analytics</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">Overview of asset utilization, maintenance health, and lifecycle risk from live database data.</p>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function ReportsAnalytics() {
       </div>
 
       {showFilters ? (
-        <Card className="border-brand-200 bg-brand-50/50 shadow-sm">
+        <Card className="border-gray-200 bg-gray-50 shadow-sm">
           <CardContent className="grid gap-4 pt-6 md:grid-cols-2 lg:grid-cols-3">
             <Select
               label="Time Period"
@@ -206,7 +206,7 @@ export default function ReportsAnalytics() {
               options={departments}
             />
             <div className="rounded-2xl border border-dashed border-brand-200 bg-white p-4 text-sm text-gray-600">
-              <p className="font-medium text-gray-900">Current filter</p>
+              <p className="font-medium text-brand-900">Current filter</p>
               <p className="mt-2">{periodLabel} · {selectedDepartmentLabel}</p>
             </div>
           </CardContent>
@@ -234,14 +234,14 @@ export default function ReportsAnalytics() {
                     <div key={item.label} className="grid grid-cols-[72px_minmax(0,1fr)_48px] items-center gap-3">
                       <span className="text-sm text-gray-700">{item.label}</span>
                       <div className="h-4 rounded-full bg-gray-100">
-                        <div className="h-4 rounded-full bg-brand-700" style={{ width: `${item.utilization}%` }} />
+                        <div className="h-4 rounded-full bg-brand-900" style={{ width: `${item.utilization}%` }} />
                       </div>
                       <span className="text-right text-sm font-medium text-gray-900">{item.utilization}%</span>
                     </div>
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-brand-700" /> Active use</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-brand-900" /> Active use</span>
                   <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-gray-300" /> Idle capacity</span>
                 </div>
               </>
@@ -273,14 +273,14 @@ export default function ReportsAnalytics() {
                   <p className="text-sm font-medium text-gray-900">Utilization upside</p>
                   <p className="text-xs text-gray-500">Peak categories still have room for balancing</p>
                 </div>
-                <ArrowUpRight className="text-green-600" size={18} />
+                <ArrowUpRight className="text-brand-700" size={18} />
               </div>
               <div className="flex items-center justify-between rounded-2xl bg-gray-50 p-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Maintenance backlog</p>
                   <p className="text-xs text-gray-500">Pending requests are coming straight from Prisma counts</p>
                 </div>
-                <LineChart className="text-brand-700" size={18} />
+                <LineChart className="text-brand-900" size={18} />
               </div>
             </CardContent>
           </Card>

@@ -110,7 +110,7 @@ export function Login() {
 
           <Button
             type="button"
-            className="w-full mt-6 bg-blue-600 hover:bg-blue-700"
+            className="w-full mt-6 bg-brand-900 hover:bg-brand-800"
             onClick={() => {
               const redirectUri = `${window.location.origin}/auth/callback`;
               const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;

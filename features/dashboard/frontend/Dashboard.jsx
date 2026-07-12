@@ -96,8 +96,8 @@ export function Dashboard() {
           label: "Available",
           value: summary.metrics.availableAssets,
           Icon: CheckCircle2,
-          iconClass: "text-blue-500",
-          cardClass: "border-l-4 border-l-blue-500"
+          iconClass: "text-brand-700",
+          cardClass: "border-l-4 border-l-brand-500"
         },
         {
           label: "Allocated",
@@ -109,8 +109,8 @@ export function Dashboard() {
           label: "Maintenance",
           value: summary.metrics.maintenanceAssets,
           Icon: Wrench,
-          iconClass: "text-orange-400",
-          cardClass: "border-l-4 border-l-orange-400"
+          iconClass: "text-brand-800",
+          cardClass: "border-l-4 border-l-brand-800"
         },
         {
           label: "Active Bookings",
@@ -194,7 +194,7 @@ export function Dashboard() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Allocations</h2>
-            <button className="text-sm text-blue-600 font-medium hover:underline">View All</button>
+            <button className="text-sm text-brand-700 font-medium hover:underline">View All</button>
           </div>
           
           <Card className="overflow-hidden">
@@ -243,7 +243,7 @@ export function Dashboard() {
                   key={entry.id}
                   className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
                 >
-                  <div className={`flex items-center justify-center w-4 h-4 rounded-full border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow absolute left-0 md:left-1/2 -translate-x-1/2 z-10 ${index === 0 ? 'bg-slate-900' : index === 1 ? 'bg-orange-400' : index === 2 ? 'bg-blue-400' : 'bg-red-500'}`} />
+                  <div className={`flex items-center justify-center w-4 h-4 rounded-full border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow absolute left-0 md:left-1/2 -translate-x-1/2 z-10 ${index === 0 ? 'bg-brand-900' : index === 1 ? 'bg-brand-700' : index === 2 ? 'bg-brand-500' : 'bg-gray-400'}`} />
                   <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-2.5rem)] pl-6 md:pl-0 md:group-odd:text-right md:group-even:text-left">
                     <div className="flex flex-col">
                       <span className="font-semibold text-gray-900 text-sm">{entry.title}</span>

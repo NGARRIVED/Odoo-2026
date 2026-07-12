@@ -58,7 +58,7 @@ export function LandingPage() {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="h-full">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-brand-50 text-brand-900 rounded-lg flex items-center justify-center mb-4">
                   {/* Icon placeholder */}
                   <span className="font-bold text-xl">#</span>
                 </div>
@@ -73,7 +73,7 @@ export function LandingPage() {
 
             <Card className="h-full">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-brand-50 text-brand-900 rounded-lg flex items-center justify-center mb-4">
                   <span className="font-bold text-xl">W</span>
                 </div>
                 <CardTitle className="text-xl">Maintenance Management</CardTitle>
@@ -87,7 +87,7 @@ export function LandingPage() {
 
             <Card className="h-full">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-brand-50 text-brand-900 rounded-lg flex items-center justify-center mb-4">
                   <span className="font-bold text-xl">C</span>
                 </div>
                 <CardTitle className="text-xl">Resource Booking</CardTitle>
@@ -111,21 +111,21 @@ export function LandingPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span className="text-brand-500">⚡</span> Operational Efficiency
+                  <span className="text-brand-900">⚡</span> Operational Efficiency
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">Reduce time spent searching for assets and coordinating repairs. Our structured workflows ensure everyone knows exactly what needs to be done.</p>
               </div>
               
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span className="text-brand-500">👁️</span> Total Transparency
+                  <span className="text-brand-900">👁️</span> Total Transparency
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">Audit trails and automated discrepancy reports provide a clear view of asset history, lifecycle, and utilization across all departments.</p>
               </div>
               
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span className="text-brand-500">🛡️</span> Accountability
+                  <span className="text-brand-900">🛡️</span> Accountability
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">Assign responsibility explicitly. From allocations to transfers, every action is logged to ensure resources are managed carefully.</p>
               </div>

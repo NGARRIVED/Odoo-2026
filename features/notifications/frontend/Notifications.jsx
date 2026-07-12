@@ -79,10 +79,10 @@ function SummaryCard({ icon: Icon, label, value, hint, accent = 'brand' }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">{label}</p>
-            <div className="mt-2 text-3xl font-semibold text-gray-950">{value}</div>
+            <div className="mt-2 text-3xl font-semibold text-brand-900">{value}</div>
             <p className="mt-2 text-sm text-gray-500">{hint}</p>
           </div>
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent === 'danger' ? 'bg-red-50 text-red-600' : accent === 'warning' ? 'bg-amber-50 text-amber-600' : accent === 'success' ? 'bg-green-50 text-green-600' : 'bg-brand-50 text-brand-700'}`}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-900">
             <Icon size={18} />
           </div>
         </div>
@@ -226,13 +226,13 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-brand-50/40 p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-900 shadow-sm">
             <Bell size={14} /> Activity Logs & Notifications
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-950 lg:text-4xl">Activity Logs & Notifications</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-brand-900 lg:text-4xl">Activity Logs & Notifications</h1>
             <p className="mt-2 max-w-2xl text-sm text-gray-600">System events, alerts, approvals, and notification history stored in Prisma.</p>
           </div>
         </div>
@@ -268,9 +268,9 @@ export default function Notifications() {
                     setView(option.value);
                     setVisibleCount(4);
                   }}
-                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${view === option.value ? 'border-brand-300 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${view === option.value ? 'border-brand-200 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                 >
-                  <span className="text-sm font-medium text-gray-900">{option.label}</span>
+                  <span className="text-sm font-medium text-brand-900">{option.label}</span>
                   <Badge variant={view === option.value ? 'brand' : 'default'}>{option.count}</Badge>
                 </button>
               ))}
@@ -296,7 +296,7 @@ export default function Notifications() {
                 options={dateOptions}
               />
               <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                <div className="flex items-center gap-2 font-medium text-gray-900">
+                <div className="flex items-center gap-2 font-medium text-brand-900">
                   <Filter size={16} /> Smart filters
                 </div>
                 <p className="mt-2">Use the view presets, search, and date range to isolate critical alerts, approvals, and operational events.</p>
@@ -325,10 +325,11 @@ export default function Notifications() {
                 <div className="divide-y divide-gray-200">
                   {visibleNotifications.map((item) => {
                     const Icon = getLeadingIcon(item);
+                    const isBrandIcon = item.tagVariant === 'default' || item.tagVariant === 'info';
 
                     return (
                       <article key={item.id} className="flex gap-4 border-l-4 border-l-transparent px-6 py-5 transition-colors hover:bg-gray-50/80" style={item.unread ? { borderLeftColor: '#dc2626' } : undefined}>
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.tagVariant === 'danger' ? 'bg-red-50 text-red-600' : item.tagVariant === 'warning' ? 'bg-amber-50 text-amber-600' : item.tagVariant === 'success' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isBrandIcon ? 'bg-brand-50 text-brand-900' : 'bg-gray-100 text-gray-600'}`}>
                           <Icon size={18} />
                         </div>
 

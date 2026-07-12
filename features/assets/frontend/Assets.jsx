@@ -458,10 +458,10 @@ export function Assets() {
 
   const metrics = summary
     ? [
-        { label: 'Total Assets', value: summary.totalAssets, Icon: Boxes, color: 'text-brand-600 bg-brand-50' },
-        { label: 'Available', value: summary.availableAssets, Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
-        { label: 'Allocated', value: summary.allocatedAssets, Icon: Search, color: 'text-blue-600 bg-blue-50' },
-        { label: 'Maintenance', value: summary.maintenanceAssets, Icon: Clock3, color: 'text-amber-600 bg-amber-50' }
+        { label: 'Total Assets', value: summary.totalAssets, Icon: Boxes, color: 'text-brand-900 bg-brand-50' },
+        { label: 'Available', value: summary.availableAssets, Icon: CheckCircle2, color: 'text-brand-700 bg-brand-50' },
+        { label: 'Allocated', value: summary.allocatedAssets, Icon: Search, color: 'text-brand-800 bg-brand-50' },
+        { label: 'Maintenance', value: summary.maintenanceAssets, Icon: Clock3, color: 'text-gray-700 bg-gray-100' }
       ]
     : [];
 
