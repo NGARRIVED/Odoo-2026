@@ -13,6 +13,6 @@ router.use(requireAuth);
 router.get('/', getMaintenanceRequests);
 router.get('/assets', getMaintainableAssets);
 router.post('/', createMaintenanceRequest);
-router.patch('/:requestId/status', requireRole(['ADMIN', 'ASSET_MANAGER']), updateMaintenanceStatus);
+router.patch('/:requestId/status', updateMaintenanceStatus);
 
 module.exports = router;

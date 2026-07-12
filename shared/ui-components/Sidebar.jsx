@@ -16,12 +16,7 @@ import {
 
 export function Sidebar() {
   const location = useLocation();
-<<<<<<< Updated upstream
   const user = JSON.parse(localStorage.getItem('assetflow_user') || '{}');
-=======
-  const userString = localStorage.getItem("assetflow_user");
-  const user = userString ? JSON.parse(userString) : null;
->>>>>>> Stashed changes
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -75,11 +70,11 @@ export function Sidebar() {
           className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:text-white transition-colors w-full text-left overflow-hidden"
         >
           <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white flex-shrink-0 font-bold">
-            {user ? user.name.charAt(0).toUpperCase() : <UserCircle size={18} />}
+            {user.name ? user.name.charAt(0).toUpperCase() : <UserCircle size={18} />}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="truncate text-slate-200">{user ? user.name : "Unknown User"}</span>
-            <span className="truncate text-[10px] text-slate-500">{user ? user.role : "GUEST"}</span>
+            <span className="truncate text-slate-200">{user.name ? user.name : "Unknown User"}</span>
+            <span className="truncate text-[10px] text-slate-500">{user.role ? user.role : "GUEST"}</span>
           </div>
         </button>
       </div>
