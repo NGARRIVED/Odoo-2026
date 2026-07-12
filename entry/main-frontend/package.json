@@ -1,6 +1,7 @@
 {
   "name": "@assetflow/main-frontend",
   "private": true,
+  "type": "module",
   "main": "main.jsx",
   "scripts": {
     "dev": "vite"
