@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import AssetDetail from './AssetDetail';
 import RegisterAssetForm from './RegisterAssetForm';
+import { isManagerOrAbove } from '../../../shared/utils/auth';
 
 const API_BASE = 'http://localhost:4000';
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -299,6 +300,7 @@ function exportToCSV(assets) {
 
 /* ─── Main Assets Component ─── */
 export function Assets() {
+  const isManager = isManagerOrAbove();
   const [summary, setSummary] = useState(null);
   const [assets, setAssets] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -588,10 +590,12 @@ export function Assets() {
           <h1 className="text-2xl font-bold text-gray-900">Asset Directory</h1>
           <p className="text-sm text-gray-500">Manage, filter, and track all registered enterprise assets.</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={openCreateModal}>
-          <Plus size={16} />
-          Register Asset
-        </Button>
+        {isManager && (
+          <Button className="flex items-center gap-2" onClick={openCreateModal}>
+            <Plus size={16} />
+            Register Asset
+          </Button>
+        )}
       </div>
 
       {error && <Alert className="w-full">{error}</Alert>}
@@ -788,7 +792,7 @@ export function Assets() {
                               className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
                             >
                               <MoreHorizontal size={14} />
-                              Manage
+                              {isManager ? 'Manage' : 'View Details'}
                             </button>
                           </td>
                         </tr>
@@ -928,6 +932,7 @@ export function Assets() {
               setModalMode('edit');
             }}
             onRetire={handleRetireAsset}
+            isManager={isManager}
           />
         ) : modalMode === 'edit' && activeAsset ? (
           <RegisterAssetForm

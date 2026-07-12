@@ -336,7 +336,7 @@ function BookingsTab({ bookings = [] }) {
   );
 }
 
-export default function AssetDetail({ asset, onClose, onEdit, onRetire }) {
+export default function AssetDetail({ asset, onClose, onEdit, onRetire, isManager = true }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [details, setDetails] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -431,21 +431,23 @@ export default function AssetDetail({ asset, onClose, onEdit, onRetire }) {
       </Tabs>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-100">
-        <Button className="flex items-center gap-2" onClick={() => onEdit(asset)}>
-          <PencilLine size={16} />
-          Edit Asset
-        </Button>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={() => onRetire(asset)}
-          disabled={asset.status === 'RETIRED' || asset.status === 'DISPOSED'}
-        >
-          <Trash2 size={16} />
-          Mark as Retired
-        </Button>
-      </div>
+      {isManager && (
+        <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-100">
+          <Button className="flex items-center gap-2" onClick={() => onEdit(asset)}>
+            <PencilLine size={16} />
+            Edit Asset
+          </Button>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => onRetire(asset)}
+            disabled={asset.status === 'RETIRED' || asset.status === 'DISPOSED'}
+          >
+            <Trash2 size={16} />
+            Mark as Retired
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
