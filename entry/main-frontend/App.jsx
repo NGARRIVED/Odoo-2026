@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import LandingPage from '../../features/landing-page/frontend';
+import { LandingPage } from '../../features/landing-page/frontend';
 import { Login, Signup, ForgotPassword } from '../../features/authentication/frontend';
 import { Dashboard } from '../../features/dashboard/frontend';
 import { OrganizationSetup } from '../../features/organization-setup/frontend';

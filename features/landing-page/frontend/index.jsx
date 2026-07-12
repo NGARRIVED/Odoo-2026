@@ -1,3 +1,1 @@
-export default function LandingPage() {
-  return <main />;
-}
+export * from "./LandingPage";
