@@ -36,14 +36,25 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
+function AuthRoute({ children }) {
+  const token = localStorage.getItem('assetflow_token');
+  const user = localStorage.getItem('assetflow_user');
+
+  if (token && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/" element={<AuthRoute><LandingPage /></AuthRoute>} />
+        <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+        <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
+        <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
         
         {/* Protected Layout wrapper */}
         <Route element={<Layout />}>
